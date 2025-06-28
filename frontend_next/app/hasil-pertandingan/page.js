@@ -13,9 +13,10 @@ const ResultsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newResult, setNewResult] = useState({
-    eventName: "Porprov Pasuruan 2025",
+    eventName: "",
     cabor: "",
     nomor: "",
+    catatan: "",
     atlet: [{ id: "", posisi: "" }],
   });
 
@@ -28,6 +29,14 @@ const ResultsPage = () => {
   const [error, setError] = useState(null);
 
   const resultsPerPage = 10;
+
+  // Medal priority for sorting
+  const medalPriority = {
+    "Emas": 1,
+    "Perak": 2,
+    "Perunggu": 3,
+    "Partisipasi": 4
+  };
 
   // Fetch data from API
   useEffect(() => {
@@ -60,6 +69,7 @@ const ResultsPage = () => {
             },
             atlet: { id: 1, nama: "Siti Rahmawati" },
             medali: "Emas",
+            event_name: "Porprov Pasuruan 2025",
             created_at: "2025-06-16T00:00:00Z",
           },
           {
@@ -71,6 +81,7 @@ const ResultsPage = () => {
             },
             atlet: { id: 2, nama: "Ahmad Fauzi" },
             medali: "Perak",
+            event_name: "Porprov Pasuruan 2025",
             created_at: "2025-06-16T00:00:00Z",
           },
         ]);
@@ -94,57 +105,40 @@ const ResultsPage = () => {
     return medali || "Partisipasi";
   };
 
-  const getUniqueValues = (key) => [
-    ...new Set(
-      allResults
-        .map((item) => {
-          if (key === "cabangOlahraga") return item.nomor?.cabor?.nama_cabor;
-          if (key === "nomor") return item.nomor?.nama_nomor;
-          return item[key];
-        })
-        .filter(Boolean)
-    ),
-  ];
-
-  const uniqueCabors = useMemo(
-    () => getUniqueValues("cabangOlahraga"),
-    [allResults]
-  );
-  const allUniqueNomors = useMemo(() => getUniqueValues("nomor"), [allResults]);
-  const uniqueNomors = useMemo(() => {
-    if (!filterCabor) return [];
-    return [
-      ...new Set(
-        allResults
-          .filter((item) => item.nomor?.cabor?.nama_cabor === filterCabor)
-          .map((item) => item.nomor?.nama_nomor)
-          .filter(Boolean)
-      ),
-    ];
-  }, [filterCabor, allResults]);
-
-  const nomorsForModal = useMemo(() => {
-    if (!newResult.cabor) return [];
-    return nomors.filter((n) => n.cabor_id == newResult.cabor);
-  }, [newResult.cabor, nomors]);
-
   const filteredResults = useMemo(() => {
-    return allResults.filter((result) => {
-      const matchesCabor =
-        filterCabor === "" || result.nomor?.cabor?.nama_cabor === filterCabor;
-      const matchesNomor =
-        filterNomor === "" || result.nomor?.nama_nomor === filterNomor;
-      const matchesSearch =
+    const groupedResults = {};
+    
+    allResults.forEach(result => {
+      const key = `${result.event_name}-${result.nomor?.cabor?.id}-${result.nomor?.id}`;
+      
+      if (!groupedResults[key]) {
+        groupedResults[key] = [];
+      }
+      
+      groupedResults[key].push(result);
+    });
+
+    const bestResults = Object.values(groupedResults).map(group => {
+      return group.sort((a, b) => 
+        medalPriority[a.medali] - medalPriority[b.medali]
+      )[0];
+    });
+
+    // Apply filters to the best results
+    return bestResults.filter((result) => {
+      const matchesCabor = 
+        filterCabor === "" || 
+        result.nomor?.cabor?.nama_cabor === filterCabor;
+      const matchesNomor = 
+        filterNomor === "" || 
+        result.nomor?.nama_nomor === filterNomor;
+      const matchesSearch = 
         searchQuery === "" ||
-        result.nomor?.cabor?.nama_cabor
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        result.nomor?.nama_nomor
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        getMedal(result.medali)
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase());
+        result.nomor?.cabor?.nama_cabor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.nomor?.nama_nomor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getMedal(result.medali)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.event_name?.toLowerCase().includes(searchQuery.toLowerCase());
+
       return matchesCabor && matchesNomor && matchesSearch;
     });
   }, [filterCabor, filterNomor, searchQuery, allResults]);
@@ -201,7 +195,6 @@ const ResultsPage = () => {
 
   const saveResults = async () => {
     try {
-      // Validasi data
       if (!newResult.cabor || !newResult.nomor) {
         setError("Pilih cabang olahraga dan nomor pertandingan");
         return;
@@ -214,20 +207,19 @@ const ResultsPage = () => {
         }
       }
 
-      // Kirim data ke backend
       const promises = newResult.atlet.map((athlete) => {
         const formData = new FormData();
         formData.append("atlet_id", athlete.id);
         formData.append("nomor_id", newResult.nomor);
         formData.append("event_name", newResult.eventName);
         formData.append("medali", athlete.posisi);
+        formData.append("catatan", newResult.catatan); 
 
         return axios.post("http://localhost:8080/api/hasil/add", formData);
       });
 
       await Promise.all(promises);
 
-      // Refresh data
       const resultsRes = await axios.get("http://localhost:8080/api/hasil");
       setAllResults(resultsRes.data.data || []);
 
@@ -236,6 +228,7 @@ const ResultsPage = () => {
         eventName: "Porprov Pasuruan 2025",
         cabor: "",
         nomor: "",
+        catatan: "",
         atlet: [{ id: "", posisi: "" }],
       });
       setError(null);
@@ -247,6 +240,11 @@ const ResultsPage = () => {
       );
     }
   };
+
+  const nomorsForModal = useMemo(() => {
+    if (!newResult.cabor) return [];
+    return nomors.filter((n) => n.cabor_id == newResult.cabor);
+  }, [newResult.cabor, nomors]);
 
   if (loading) {
     return (
@@ -314,9 +312,9 @@ const ResultsPage = () => {
                 }}
               >
                 <option value="">Semua Cabang Olahraga</option>
-                {uniqueCabors.map((cabor, index) => (
-                  <option key={index} value={cabor}>
-                    {cabor}
+                {cabors.map((cabor) => (
+                  <option key={cabor.id} value={cabor.nama_cabor}>
+                    {cabor.nama_cabor}
                   </option>
                 ))}
               </select>
@@ -347,11 +345,17 @@ const ResultsPage = () => {
                 disabled={!filterCabor}
               >
                 <option value="">Semua Nomor Pertandingan</option>
-                {uniqueNomors.map((nomor, index) => (
-                  <option key={index} value={nomor}>
-                    {nomor}
-                  </option>
-                ))}
+                {nomors
+                  .filter((nomor) => 
+                    filterCabor 
+                      ? cabors.find(c => c.nama_cabor === filterCabor)?.id === nomor.cabor_id
+                      : true
+                  )
+                  .map((nomor) => (
+                    <option key={nomor.id} value={nomor.nama_nomor}>
+                      {nomor.nama_nomor}
+                    </option>
+                  ))}
               </select>
               <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                 <svg
@@ -420,7 +424,7 @@ const ResultsPage = () => {
                   clipRule="evenodd"
                 />
               </svg>
-               Hasil Pertandingan
+              Tambah Hasil
             </button>
           </div>
         </div>
@@ -536,6 +540,27 @@ const ResultsPage = () => {
                       </svg>
                     </div>
                   </div>
+                </div>
+
+                <div className="mb-4">
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-gray-700)" }}
+                  >
+                    Catatan (Opsional)
+                  </label>
+                  <textarea
+                    value={newResult.catatan}
+                    onChange={(e) => 
+                      setNewResult({ ...newResult, catatan: e.target.value })
+                    }
+                    className="w-full p-3 rounded-lg border"
+                    style={{
+                      borderColor: "var(--color-gray-300)",
+                    }}
+                    placeholder="Masukkan catatan tambahan"
+                    rows="3"
+                  />
                 </div>
 
                 <div className="mb-4">
@@ -697,6 +722,12 @@ const ResultsPage = () => {
                   className="p-4 text-left"
                   style={{ borderBottom: "1px solid var(--color-gray-200)" }}
                 >
+                  Event
+                </th>
+                <th
+                  className="p-4 text-left"
+                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
+                >
                   Cabang Olahraga
                 </th>
                 <th
@@ -735,6 +766,9 @@ const ResultsPage = () => {
                   key={result.id}
                   style={{ borderBottom: "1px solid var(--color-gray-200)" }}
                 >
+                  <td className="p-4">
+                    {result.event_name || "Porprov Pasuruan 2025"}
+                  </td>
                   <td className="p-4">
                     {result.nomor?.cabor?.nama_cabor || "N/A"}
                   </td>

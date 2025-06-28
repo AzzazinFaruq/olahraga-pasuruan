@@ -8,52 +8,121 @@ import Footer from "../../components/footer";
 
 const ResultDetail = ({ params }) => {
   const [result, setResult] = useState(null);
+  const [relatedAthletes, setRelatedAthletes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [relatedResults, setRelatedResults] = useState([]);
+
+  // Helper function to get medal priority
+  const getMedalPriority = (medal) => {
+    switch (medal) {
+      case "Emas":
+        return 1;
+      case "Perak":
+        return 2;
+      case "Perunggu":
+        return 3;
+      default:
+        return 4;
+    }
+  };
 
   useEffect(() => {
     const fetchResultDetail = async () => {
       try {
         setLoading(true);
+        // Fetch main result
         const response = await axios.get(
           `http://localhost:8080/api/hasil/${params.id}`
         );
-        setResult(response.data.data);
+        const mainResult = response.data.data;
+        setResult(mainResult);
 
-        // Fetch related results from the same nomor
-        if (response.data.data.nomor_id) {
-          const relatedResponse = await axios.get(
-            `http://localhost:8080/api/hasil/nomor/${response.data.data.nomor_id}`
-          );
-          setRelatedResults(relatedResponse.data.data || []);
+        // Fetch all athletes in the same event, cabor, and nomor
+        if (mainResult) {
+          const eventName = mainResult.event_name;
+          const caborId = mainResult.nomor?.cabor?.id;
+          const nomorId = mainResult.nomor_id;
+
+          if (eventName && caborId && nomorId) {
+            // First get all results for this nomor
+            const nomorResultsResponse = await axios.get(
+              `http://localhost:8080/api/hasil/nomor/${nomorId}`
+            );
+
+            // Then filter for this specific event and cabor
+            const filteredResults = nomorResultsResponse.data.data.filter(
+              (result) =>
+                result.event_name === eventName &&
+                result.nomor?.cabor?.id === caborId
+            );
+
+            // Process to get highest medal for each athlete
+            const athleteMedals = new Map();
+
+            filteredResults.forEach((result) => {
+              const athleteId = result.atlet.id;
+              const currentMedal = result.medali;
+              const currentPriority = getMedalPriority(currentMedal);
+
+              if (!athleteMedals.has(athleteId)) {
+                athleteMedals.set(athleteId, result);
+              } else {
+                const existingResult = athleteMedals.get(athleteId);
+                const existingPriority = getMedalPriority(
+                  existingResult.medali
+                );
+
+                // Keep only the highest medal
+                if (currentPriority < existingPriority) {
+                  athleteMedals.set(athleteId, result);
+                }
+              }
+            });
+
+            // Convert to array and sort by medal priority
+            const sortedAthletes = Array.from(athleteMedals.values()).sort(
+              (a, b) => getMedalPriority(a.medali) - getMedalPriority(b.medali)
+            );
+
+            setRelatedAthletes(sortedAthletes);
+          }
         }
       } catch (err) {
         console.error("Error fetching result detail:", err);
         setError("Gagal memuat detail hasil pertandingan");
-        // Fallback to static data if API fails
-        setResult({
+        const staticResult = {
           id: parseInt(params.id),
           nomor: {
+            id: 1,
             nama_nomor: "Individual Hyung PUTRI",
-            cabor: { nama_cabor: "HAPKIDO" },
+            cabor: { id: 1, nama_cabor: "HAPKIDO" },
           },
-          atlet: { nama: "Siti Rahmawati" },
+          atlet: { id: 1, nama: "Siti Rahmawati", nik: "1234567890" },
           medali: "Emas",
           event_name: "Porprov Pasuruan 2025",
           catatan: "Rekor baru cabang renang",
           created_at: "2025-06-16T00:00:00Z",
-        });
-        setRelatedResults([
+          nomor_id: 1,
+        };
+        setResult(staticResult);
+        setRelatedAthletes([
           {
             id: 1,
-            atlet: { nama: "Siti Rahmawati" },
+            atlet: { id: 1, nama: "Siti Rahmawati", nik: "1234567890" },
             medali: "Emas",
+            created_at: "2025-06-16T00:00:00Z",
           },
           {
             id: 2,
-            atlet: { nama: "Ahmad Fauzi" },
+            atlet: { id: 2, nama: "Ahmad Fauzi", nik: "0987654321" },
             medali: "Perak",
+            created_at: "2025-06-16T00:00:00Z",
+          },
+          {
+            id: 3,
+            atlet: { id: 3, nama: "Budi Santoso", nik: "1122334455" },
+            medali: "Perunggu",
+            created_at: "2025-06-16T00:00:00Z",
           },
         ]);
       } finally {
@@ -211,7 +280,7 @@ const ResultDetail = ({ params }) => {
               Tanggal: {formatDate(result?.created_at)}
             </p>
 
-            {/* Detail Hasil */}
+            {/* Detail Hasil - Semua atlet dalam event yang sama */}
             <div className="mb-8">
               <h3
                 className="font-bold mb-4"
@@ -222,46 +291,53 @@ const ResultDetail = ({ params }) => {
               >
                 Detail Hasil
               </h3>
-              <div
-                className="flex items-center p-4 rounded-lg"
-                style={{
-                  backgroundColor: "var(--color-gray-100)",
-                  borderLeft: `4px solid ${getMedalColor(result?.medali)}`,
-                }}
-              >
-                <div className="w-16 h-16 rounded-full overflow-hidden mr-4 bg-gray-300 flex items-center justify-center">
-                  {result?.atlet?.foto_3x4 ? (
-                    <img
-                      src={`http://localhost:8080/${result?.atlet?.foto_3x4}`}
-                      alt={result?.atlet?.nama || "Atlet"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-600 font-bold text-lg">
-                      {result?.atlet?.nama?.charAt(0) || "A"}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <h3
-                    className="font-semibold"
-                    style={{ fontSize: "var(--font-size-medium)" }}
+              <div className="space-y-4">
+                {relatedAthletes.map((athleteResult) => (
+                  <div
+                    key={athleteResult.id}
+                    className="flex items-center p-4 rounded-lg"
+                    style={{
+                      backgroundColor: "var(--color-gray-100)",
+                      borderLeft: `4px solid ${getMedalColor(
+                        athleteResult.medali
+                      )}`,
+                    }}
                   >
-                    {result?.atlet?.nama || "N/A"}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    NIK: {result?.atlet?.nik || "N/A"}
-                  </p>
-                </div>
+                    <div className="w-16 h-16 rounded-full overflow-hidden mr-4 bg-gray-300 flex items-center justify-center">
+                      {athleteResult.atlet?.foto_3x4 ? (
+                        <img
+                          src={`http://localhost:8080/${athleteResult.atlet.foto_3x4}`}
+                          alt={athleteResult.atlet.nama || "Atlet"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-600 font-bold text-lg">
+                          {athleteResult.atlet?.nama?.charAt(0) || "A"}
+                        </span>
+                      )}
+                    </div>
 
-                <div
-                  className={`px-4 py-1 rounded-full font-bold ${getMedalClass(
-                    result?.medali
-                  )}`}
-                >
-                  {result?.medali || "Partisipasi"}
-                </div>
+                    <div className="flex-1">
+                      <h3
+                        className="font-semibold"
+                        style={{ fontSize: "var(--font-size-medium)" }}
+                      >
+                        {athleteResult.atlet?.nama || "N/A"}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        NIK: {athleteResult.atlet?.nik || "N/A"}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`px-4 py-1 rounded-full font-bold ${getMedalClass(
+                        athleteResult.medali
+                      )}`}
+                    >
+                      {athleteResult.medali || "Partisipasi"}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -281,57 +357,6 @@ const ResultDetail = ({ params }) => {
                   <p style={{ color: "var(--color-gray-700)" }}>
                     {result.catatan}
                   </p>
-                </div>
-              </div>
-            )}
-
-            {/* Hasil Lainnya dalam Nomor yang Sama */}
-            {relatedResults.length > 1 && (
-              <div className="mb-8">
-                <h3
-                  className="font-bold mb-4"
-                  style={{
-                    fontSize: "var(--font-size-medium)",
-                    color: "var(--color-gray-800)",
-                  }}
-                >
-                  Hasil Lainnya dalam Nomor Ini
-                </h3>
-                <div className="space-y-3">
-                  {relatedResults
-                    .filter((r) => r.id !== result.id)
-                    .map((relatedResult, index) => (
-                      <div
-                        key={relatedResult.id}
-                        className="flex items-center p-3 rounded-lg"
-                        style={{
-                          backgroundColor: "var(--color-gray-50)",
-                          borderLeft: `4px solid ${getMedalColor(
-                            relatedResult.medali
-                          )}`,
-                        }}
-                      >
-                        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 bg-gray-300 flex items-center justify-center">
-                          <span className="text-gray-600 font-bold text-sm">
-                            {relatedResult.atlet?.nama?.charAt(0) || "A"}
-                          </span>
-                        </div>
-
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">
-                            {relatedResult.atlet?.nama || "N/A"}
-                          </h4>
-                        </div>
-
-                        <div
-                          className={`px-3 py-1 rounded-full font-bold text-sm ${getMedalClass(
-                            relatedResult.medali
-                          )}`}
-                        >
-                          {relatedResult.medali || "Partisipasi"}
-                        </div>
-                      </div>
-                    ))}
                 </div>
               </div>
             )}
