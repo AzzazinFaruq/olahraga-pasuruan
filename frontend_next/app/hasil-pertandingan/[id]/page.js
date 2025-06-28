@@ -6,7 +6,10 @@ import axios from "axios";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 
-const ResultDetail = ({ params }) => {
+const ResultDetail = ({ params: paramsPromise }) => {
+  const params = React.use(paramsPromise);
+  const resultId = params.id;
+
   const [result, setResult] = useState(null);
   const [relatedAthletes, setRelatedAthletes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +33,10 @@ const ResultDetail = ({ params }) => {
     const fetchResultDetail = async () => {
       try {
         setLoading(true);
+
         // Fetch main result
         const response = await axios.get(
-          `http://localhost:8080/api/hasil/${params.id}`
+          `http://localhost:8080/api/hasil/${resultId}`
         );
         const mainResult = response.data.data;
         setResult(mainResult);
@@ -72,7 +76,6 @@ const ResultDetail = ({ params }) => {
                   existingResult.medali
                 );
 
-                // Keep only the highest medal
                 if (currentPriority < existingPriority) {
                   athleteMedals.set(athleteId, result);
                 }
@@ -91,7 +94,7 @@ const ResultDetail = ({ params }) => {
         console.error("Error fetching result detail:", err);
         setError("Gagal memuat detail hasil pertandingan");
         const staticResult = {
-          id: parseInt(params.id),
+          id: parseInt(resultId),
           nomor: {
             id: 1,
             nama_nomor: "Individual Hyung PUTRI",
@@ -131,7 +134,7 @@ const ResultDetail = ({ params }) => {
     };
 
     fetchResultDetail();
-  }, [params.id]);
+  }, [resultId]);
 
   const galleryImages = [
     { id: 1, alt: "Pertandingan Hapkido" },
@@ -280,22 +283,16 @@ const ResultDetail = ({ params }) => {
               Tanggal: {formatDate(result?.created_at)}
             </p>
 
-            {/* Detail Hasil - Semua atlet dalam event yang sama */}
+            {/* Detail Hasil */}
             <div className="mb-8">
-              <h3
-                className="font-bold mb-4"
-                style={{
-                  fontSize: "var(--font-size-medium)",
-                  color: "var(--color-gray-800)",
-                }}
-              >
+              <h3 className="font-bold mb-4 text-lg text-gray-800">
                 Detail Hasil
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {relatedAthletes.map((athleteResult) => (
                   <div
                     key={athleteResult.id}
-                    className="flex items-center p-4 rounded-lg"
+                    className="flex items-center p-3 rounded-lg gap-3"
                     style={{
                       backgroundColor: "var(--color-gray-100)",
                       borderLeft: `4px solid ${getMedalColor(
@@ -303,7 +300,7 @@ const ResultDetail = ({ params }) => {
                       )}`,
                     }}
                   >
-                    <div className="w-16 h-16 rounded-full overflow-hidden mr-4 bg-gray-300 flex items-center justify-center">
+                    <div className="w-12 h-12 min-w-[48px] rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
                       {athleteResult.atlet?.foto_3x4 ? (
                         <img
                           src={`http://localhost:8080/${athleteResult.atlet.foto_3x4}`}
@@ -311,26 +308,20 @@ const ResultDetail = ({ params }) => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-gray-600 font-bold text-lg">
+                        <span className="text-gray-600 font-bold text-sm">
                           {athleteResult.atlet?.nama?.charAt(0) || "A"}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex-1">
-                      <h3
-                        className="font-semibold"
-                        style={{ fontSize: "var(--font-size-medium)" }}
-                      >
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base truncate">
                         {athleteResult.atlet?.nama || "N/A"}
                       </h3>
-                      <p className="text-sm text-gray-600">
-                        NIK: {athleteResult.atlet?.nik || "N/A"}
-                      </p>
                     </div>
 
                     <div
-                      className={`px-4 py-1 rounded-full font-bold ${getMedalClass(
+                      className={`px-3 py-1 rounded-full font-bold text-sm whitespace-nowrap ${getMedalClass(
                         athleteResult.medali
                       )}`}
                     >

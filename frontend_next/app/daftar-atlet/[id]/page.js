@@ -7,6 +7,12 @@ import Footer from "../../components/footer";
 import axios from "axios";
 import { useParams } from "next/navigation";
 
+const formatTanggal = (dateString) => {
+  const options = { day: 'numeric', month: 'long', year: 'numeric' };
+  const date = new Date(dateString);
+  return date.toLocaleDateString('id-ID', options);
+};
+
 const AthleteDetail = () => {
   const { id } = useParams();
   const [athlete, setAthlete] = useState(null);
@@ -83,7 +89,7 @@ const AthleteDetail = () => {
                 <div className="space-y-4">
                   <Info
                     label="TTL"
-                    value={`${athlete.tempat_lahir}, ${athlete.tanggal_lahir}`}
+                    value={`${athlete.tempat_lahir}, ${formatTanggal(athlete.tanggal_lahir)}`}
                   />
                   <Info label="Jenis Kelamin" value={athlete.jenis_kelamin} />
                   <Info label="Alamat" value={athlete.alamat} />
