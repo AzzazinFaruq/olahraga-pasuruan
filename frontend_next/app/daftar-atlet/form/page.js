@@ -1,51 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const AddAthletePage = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    photo: null,
-    birthPlace: "",
-    birthDate: "",
-    gender: "",
-    address: "",
-    school: "",
-    parent: "",
-    cabangOlahraga: "",
-    nomor: "",
+    nik: "",
+    nama: "",
+    tempat_lahir: "",
+    tanggal_lahir: "",
+    jenis_kelamin: "",
+    alamat: "",
+    sekolah: "",
+    nama_sekolah: "",
+    nama_ortu: "",
+    foto_3x4: null,
+    foto_bebas: null,
   });
 
-  const [preview, setPreview] = useState("");
-  const [cabangOlahragaList, setCabangOlahragaList] = useState([]);
-  const [nomorList, setNomorList] = useState([]);
-
-  useEffect(() => {
-    // Ambil daftar cabor dari backend
-    fetch("http://localhost:8080/api/cabor")
-      .then((res) => res.json())
-      .then((data) => setCabangOlahragaList(data.data || []));
-  }, []);
-
-  useEffect(() => {
-    if (formData.cabangOlahraga) {
-      const selectedCabor = cabangOlahragaList.find(
-        (cabor) => cabor.nama_cabor === formData.cabangOlahraga
-      );
-      if (selectedCabor) {
-        fetch(`http://localhost:8080/api/nomor/cabor/${selectedCabor.id}`)
-          .then((res) => res.json())
-          .then((data) => setNomorList(data.data || []));
-      } else {
-        setNomorList([]);
-      }
-    } else {
-      setNomorList([]);
-    }
-  }, [formData.cabangOlahraga, cabangOlahragaList]);
+  const [preview3x4, setPreview3x4] = useState("");
+  const [previewBebas, setPreviewBebas] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,24 +36,78 @@ const AddAthletePage = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFile3x4Change = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFormData((prev) => ({
         ...prev,
-        photo: file,
+        foto_3x4: file,
       }));
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result);
+        setPreview3x4(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleFileBebasChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        foto_bebas: file,
+      }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewBebas(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const formPayload = new FormData();
+      formPayload.append("nik", formData.nik);
+      formPayload.append("nama", formData.nama);
+      formPayload.append("tempat_lahir", formData.tempat_lahir);
+      formPayload.append("tanggal_lahir", formData.tanggal_lahir);
+      formPayload.append("jenis_kelamin", formData.jenis_kelamin);
+      formPayload.append("alamat", formData.alamat);
+      formPayload.append("sekolah", formData.sekolah);
+      formPayload.append("nama_sekolah", formData.nama_sekolah);
+      formPayload.append("nama_ortu", formData.nama_ortu);
+      formPayload.append("foto_3x4", formData.foto_3x4);
+      formPayload.append("foto_bebas", formData.foto_bebas);
+
+      const response = await axios.post(
+        "http://localhost:8080/api/atlet/add",
+        formPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.data.status) {
+        alert("Data atlet berhasil ditambahkan!");
+        router.push("/daftar-atlet");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Terjadi kesalahan saat menambahkan atlet"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -103,49 +138,117 @@ const AddAthletePage = () => {
           >
             <form onSubmit={handleSubmit}>
               <div className="flex flex-col md:flex-row gap-8">
-                {/* Left Column - Photo */}
-                <div className="md:w-1/3">
-                  <div className="w-full mb-4">
+                {/* Left Column - Foto */}
+                <div className="md:w-1/3 space-y-6">
+                  {/* Foto 3x4 */}
+                  <div>
                     <label className="block text-sm font-medium mb-2">
-                      Foto Atlet
+                      Foto 3x4
                     </label>
-                    <div className="w-full h-80 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
-                      {preview ? (
+                    <div className="w-full h-64 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
+                      {preview3x4 ? (
                         <img
-                          src={preview}
-                          alt="Preview"
+                          src={preview3x4}
+                          alt="Preview 3x4"
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="text-gray-400 text-center p-4">
-                          No image selected
+                          Belum ada foto 3x4
                         </div>
                       )}
                     </div>
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleFileChange}
+                      onChange={handleFile3x4Change}
+                      className="mt-2 w-full p-2 rounded-lg border border-gray-300"
+                      required
+                    />
+                  </div>
+
+                  {/* Foto Bebas */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Foto Bebas
+                    </label>
+                    <div className="w-full h-64 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
+                      {previewBebas ? (
+                        <img
+                          src={previewBebas}
+                          alt="Preview Bebas"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-center p-4">
+                          Belum ada foto bebas
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileBebasChange}
                       className="mt-2 w-full p-2 rounded-lg border border-gray-300"
                       required
                     />
                   </div>
                 </div>
 
-                {/* Right Column - Form Fields */}
+                {/* Right Column - Form Data */}
                 <div className="md:w-2/3">
                   <div className="space-y-6">
+                    {error && (
+                      <div
+                        className="p-3 rounded-lg mb-4"
+                        style={{ backgroundColor: "var(--color-error-bg)" }}
+                      >
+                        <p style={{ color: "var(--color-error)" }}>{error}</p>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        NIK (16 digit)
+                      </label>
+                      <input
+                        type="text"
+                        name="nik"
+                        value={formData.nik}
+                        onChange={handleChange}
+                        className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
+                        placeholder="Masukkan NIK"
+                        required
+                        maxLength={16}
+                      />
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium mb-1">
                         Nama Lengkap
                       </label>
                       <input
                         type="text"
-                        name="name"
-                        value={formData.name}
+                        name="nama"
+                        value={formData.nama}
                         onChange={handleChange}
                         className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
                         placeholder="Masukkan nama lengkap"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Nama Orang Tua/Wali
+                      </label>
+                      <input
+                        type="text"
+                        name="nama_ortu"
+                        value={formData.nama_ortu}
+                        onChange={handleChange}
+                        className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
+                        placeholder="Masukkan nama orang tua/wali"
                         required
                       />
                     </div>
@@ -157,8 +260,8 @@ const AddAthletePage = () => {
                         </label>
                         <input
                           type="text"
-                          name="birthPlace"
-                          value={formData.birthPlace}
+                          name="tempat_lahir"
+                          value={formData.tempat_lahir}
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
                           placeholder="Masukkan tempat lahir"
@@ -172,8 +275,8 @@ const AddAthletePage = () => {
                         </label>
                         <input
                           type="date"
-                          name="birthDate"
-                          value={formData.birthDate}
+                          name="tanggal_lahir"
+                          value={formData.tanggal_lahir}
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg border border-gray-300"
                           required
@@ -186,8 +289,8 @@ const AddAthletePage = () => {
                         </label>
                         <div className="relative">
                           <select
-                            name="gender"
-                            value={formData.gender}
+                            name="jenis_kelamin"
+                            value={formData.jenis_kelamin}
                             onChange={handleChange}
                             className="w-full p-3 rounded-lg border border-gray-300 appearance-none"
                             required
@@ -214,67 +317,38 @@ const AddAthletePage = () => {
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Alamat
+                          Alamat Lengkap
                         </label>
                         <input
                           type="text"
-                          name="address"
-                          value={formData.address}
+                          name="alamat"
+                          value={formData.alamat}
                           onChange={handleChange}
                           className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
-                          placeholder="Masukkan alamat"
+                          placeholder="Masukkan alamat lengkap"
                           required
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Sekolah
-                        </label>
-                        <input
-                          type="text"
-                          name="school"
-                          value={formData.school}
-                          onChange={handleChange}
-                          className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
-                          placeholder="Masukkan nama sekolah"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Nama Orang Tua/Wali
-                        </label>
-                        <input
-                          type="text"
-                          name="parent"
-                          value={formData.parent}
-                          onChange={handleChange}
-                          className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
-                          placeholder="Masukkan nama orang tua/wali"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Cabang Olahraga
+                          Jenjang Pendidikan
                         </label>
                         <div className="relative">
                           <select
-                            name="cabangOlahraga"
-                            value={formData.cabangOlahraga}
+                            name="sekolah"
+                            value={formData.sekolah}
                             onChange={handleChange}
                             className="w-full p-3 rounded-lg border border-gray-300 appearance-none"
                             required
                           >
-                            <option value="">Pilih Cabang Olahraga</option>
-                            {cabangOlahragaList.map((cabor) => (
-                              <option key={cabor.id} value={cabor.nama_cabor}>
-                                {cabor.nama_cabor}
-                              </option>
-                            ))}
+                            <option value="">Pilih Jenjang</option>
+                            <option value="SD">SD</option>
+                            <option value="SMP">SMP</option>
+                            <option value="SMA">SMA</option>
+                            <option value="SMK">SMK</option>
+                            <option value="Universitas">Universitas</option>
+                            <option value="Lainnya">Lainnya</option>
                           </select>
                           <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                             <svg
@@ -294,37 +368,17 @@ const AddAthletePage = () => {
 
                       <div>
                         <label className="block text-sm font-medium mb-1">
-                          Nomor Pertandingan
+                          Nama Sekolah/Institusi
                         </label>
-                        <div className="relative">
-                          <select
-                            name="nomor"
-                            value={formData.nomor}
-                            onChange={handleChange}
-                            className="w-full p-3 rounded-lg border border-gray-300 appearance-none"
-                            required
-                          >
-                            <option value="">Pilih Nomor Pertandingan</option>
-                            {nomorList.map((nomor) => (
-                              <option key={nomor.id} value={nomor.nama_nomor}>
-                                {nomor.nama_nomor}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                            <svg
-                              className="w-4 h-4"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                        </div>
+                        <input
+                          type="text"
+                          name="nama_sekolah"
+                          value={formData.nama_sekolah}
+                          onChange={handleChange}
+                          className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
+                          placeholder="Masukkan nama sekolah/institusi"
+                          required
+                        />
                       </div>
                     </div>
 
@@ -337,10 +391,11 @@ const AddAthletePage = () => {
                       </Link>
                       <button
                         type="submit"
-                        className="px-4 py-2 rounded-lg text-white"
+                        className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                         style={{ backgroundColor: "var(--color-primary)" }}
+                        disabled={isSubmitting}
                       >
-                        Simpan
+                        {isSubmitting ? "Menyimpan..." : "Simpan"}
                       </button>
                     </div>
                   </div>

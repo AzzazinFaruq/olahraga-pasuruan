@@ -13,6 +13,7 @@ const ResultsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newResult, setNewResult] = useState({
+    eventName: "Porprov Pasuruan 2025",
     cabor: "",
     nomor: "",
     atlet: [{ id: "", posisi: "" }],
@@ -33,36 +34,53 @@ const ResultsPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resultsRes, athletesRes, caborsRes, nomorsRes] = await Promise.all([
-          axios.get('http://localhost:8080/api/hasil'),
-          axios.get('http://localhost:8080/api/atlet'),
-          axios.get('http://localhost:8080/api/cabor'),
-          axios.get('http://localhost:8080/api/nomor')
-        ]);
+        const [resultsRes, athletesRes, caborsRes, nomorsRes] =
+          await Promise.all([
+            axios.get("http://localhost:8080/api/hasil"),
+            axios.get("http://localhost:8080/api/atlet"),
+            axios.get("http://localhost:8080/api/cabor"),
+            axios.get("http://localhost:8080/api/nomor"),
+          ]);
 
         setAllResults(resultsRes.data.data || []);
         setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
         setNomors(nomorsRes.data.data || []);
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Gagal memuat data');
+        console.error("Error fetching data:", err);
+        setError("Gagal memuat data");
         // Fallback to static data if API fails
         setAllResults([
           {
             id: 1,
-            nomor: { nama_nomor: "Individual Hyung PUTRI", cabor: { nama_cabor: "HAPKIDO" } },
-            atlet: { nama: "Siti Rahmawati" },
+            nomor: {
+              id: 1,
+              nama_nomor: "Individual Hyung PUTRI",
+              cabor: { id: 1, nama_cabor: "HAPKIDO" },
+            },
+            atlet: { id: 1, nama: "Siti Rahmawati" },
             medali: "Emas",
             created_at: "2025-06-16T00:00:00Z",
           },
           {
             id: 2,
-            nomor: { nama_nomor: "Individual Hyung PUTRI", cabor: { nama_cabor: "HAPKIDO" } },
-            atlet: { nama: "Ahmad Fauzi" },
+            nomor: {
+              id: 1,
+              nama_nomor: "Individual Hyung PUTRI",
+              cabor: { id: 1, nama_cabor: "HAPKIDO" },
+            },
+            atlet: { id: 2, nama: "Ahmad Fauzi" },
             medali: "Perak",
             created_at: "2025-06-16T00:00:00Z",
           },
+        ]);
+        setCabors([{ id: 1, nama_cabor: "HAPKIDO" }]);
+        setNomors([
+          { id: 1, nama_nomor: "Individual Hyung PUTRI", cabor_id: 1 },
+        ]);
+        setAthletes([
+          { id: 1, nama: "Siti Rahmawati" },
+          { id: 2, nama: "Ahmad Fauzi" },
         ]);
       } finally {
         setLoading(false);
@@ -77,14 +95,21 @@ const ResultsPage = () => {
   };
 
   const getUniqueValues = (key) => [
-    ...new Set(allResults.map((item) => {
-      if (key === "cabangOlahraga") return item.nomor?.cabor?.nama_cabor;
-      if (key === "nomor") return item.nomor?.nama_nomor;
-      return item[key];
-    }).filter(Boolean)),
+    ...new Set(
+      allResults
+        .map((item) => {
+          if (key === "cabangOlahraga") return item.nomor?.cabor?.nama_cabor;
+          if (key === "nomor") return item.nomor?.nama_nomor;
+          return item[key];
+        })
+        .filter(Boolean)
+    ),
   ];
 
-  const uniqueCabors = useMemo(() => getUniqueValues("cabangOlahraga"), [allResults]);
+  const uniqueCabors = useMemo(
+    () => getUniqueValues("cabangOlahraga"),
+    [allResults]
+  );
   const allUniqueNomors = useMemo(() => getUniqueValues("nomor"), [allResults]);
   const uniqueNomors = useMemo(() => {
     if (!filterCabor) return [];
@@ -98,16 +123,28 @@ const ResultsPage = () => {
     ];
   }, [filterCabor, allResults]);
 
+  const nomorsForModal = useMemo(() => {
+    if (!newResult.cabor) return [];
+    return nomors.filter((n) => n.cabor_id == newResult.cabor);
+  }, [newResult.cabor, nomors]);
+
   const filteredResults = useMemo(() => {
     return allResults.filter((result) => {
       const matchesCabor =
         filterCabor === "" || result.nomor?.cabor?.nama_cabor === filterCabor;
-      const matchesNomor = filterNomor === "" || result.nomor?.nama_nomor === filterNomor;
+      const matchesNomor =
+        filterNomor === "" || result.nomor?.nama_nomor === filterNomor;
       const matchesSearch =
         searchQuery === "" ||
-        result.nomor?.cabor?.nama_cabor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        result.nomor?.nama_nomor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getMedal(result.medali).toLowerCase().includes(searchQuery.toLowerCase());
+        result.nomor?.cabor?.nama_cabor
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        result.nomor?.nama_nomor
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        getMedal(result.medali)
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
       return matchesCabor && matchesNomor && matchesSearch;
     });
   }, [filterCabor, filterNomor, searchQuery, allResults]);
@@ -159,12 +196,69 @@ const ResultsPage = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID');
+    return date.toLocaleDateString("id-ID");
+  };
+
+  const saveResults = async () => {
+    try {
+      // Validasi data
+      if (!newResult.cabor || !newResult.nomor) {
+        setError("Pilih cabang olahraga dan nomor pertandingan");
+        return;
+      }
+
+      for (const athlete of newResult.atlet) {
+        if (!athlete.id || !athlete.posisi) {
+          setError("Data atlet belum lengkap");
+          return;
+        }
+      }
+
+      // Kirim data ke backend
+      const promises = newResult.atlet.map((athlete) => {
+        const formData = new FormData();
+        formData.append("atlet_id", athlete.id);
+        formData.append("nomor_id", newResult.nomor);
+        formData.append("event_name", newResult.eventName);
+        formData.append("medali", athlete.posisi);
+
+        return axios.post("http://localhost:8080/api/hasil/add", formData);
+      });
+
+      await Promise.all(promises);
+
+      // Refresh data
+      const resultsRes = await axios.get("http://localhost:8080/api/hasil");
+      setAllResults(resultsRes.data.data || []);
+
+      setShowModal(false);
+      setNewResult({
+        eventName: "Porprov Pasuruan 2025",
+        cabor: "",
+        nomor: "",
+        atlet: [{ id: "", posisi: "" }],
+      });
+      setError(null);
+    } catch (err) {
+      console.error("Error saving results:", err);
+      setError(
+        "Gagal menyimpan hasil pertandingan: " +
+          (err.response?.data?.message || err.message)
+      );
+    }
   };
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--background)", color: "var(--foreground)" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }}
+      >
         <Navbar />
         <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="text-center">
@@ -207,9 +301,9 @@ const ResultsPage = () => {
           </div>
         )}
 
-        <div className="mb-8 flex flex-col md:flex-row gap-4 items-start">
-          <div className="flex-1 flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
+        <div className="mb-8 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="w-full md:flex-1 relative">
               <select
                 value={filterCabor}
                 onChange={handleFilterCaborChange}
@@ -241,7 +335,7 @@ const ResultsPage = () => {
               </div>
             </div>
 
-            <div className="flex-1 relative">
+            <div className="w-full md:flex-1 relative">
               <select
                 value={filterNomor}
                 onChange={handleFilterNomorChange}
@@ -275,58 +369,60 @@ const ResultsPage = () => {
             </div>
           </div>
 
-          <div className="relative w-full md:w-64">
-            <input
-              type="text"
-              placeholder="Cari hasil pertandingan..."
-              className="w-full p-3 rounded-lg border"
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Cari hasil pertandingan..."
+                className="w-full p-3 rounded-lg border"
+                style={{
+                  borderColor: "var(--color-gray-300)",
+                  backgroundColor: "var(--color-white)",
+                }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
               style={{
-                borderColor: "var(--color-gray-300)",
-                backgroundColor: "var(--color-white)",
+                backgroundColor: "var(--color-primary)",
+                color: "white",
               }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+            >
               <svg
-                className="w-4 h-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
               >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                ></path>
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
               </svg>
-            </div>
+               Hasil Pertandingan
+            </button>
           </div>
-
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap"
-            style={{
-              backgroundColor: "var(--color-primary)",
-              color: "white",
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Hasil Pertandingan
-          </button>
         </div>
 
         {showModal && (
@@ -338,31 +434,65 @@ const ResultsPage = () => {
                     className="block text-sm font-medium mb-1"
                     style={{ color: "var(--color-gray-700)" }}
                   >
-                    Cabang Olahraga
+                    Nama Event
                   </label>
                   <input
-                    list="cabor-list"
-                    value={newResult.cabor}
-                    onInput={(e) => {
-                      const value = e.target.value;
-                      if (uniqueCabors.includes(value)) {
-                        e.target.blur();
-                      }
-                    }}
+                    value={newResult.eventName}
                     onChange={(e) =>
-                      setNewResult({ ...newResult, cabor: e.target.value })
+                      setNewResult({ ...newResult, eventName: e.target.value })
                     }
                     className="w-full p-3 rounded-lg border"
                     style={{
                       borderColor: "var(--color-gray-300)",
                     }}
-                    placeholder="Masukkan cabang olahraga"
+                    placeholder="Masukkan nama event"
                   />
-                  <datalist id="cabor-list">
-                    {uniqueCabors.map((cabor, index) => (
-                      <option key={index} value={cabor} />
-                    ))}
-                  </datalist>
+                </div>
+
+                <div className="mb-4">
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-gray-700)" }}
+                  >
+                    Cabang Olahraga
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={newResult.cabor}
+                      onChange={(e) =>
+                        setNewResult({
+                          ...newResult,
+                          cabor: e.target.value,
+                          nomor: "",
+                        })
+                      }
+                      className="w-full p-3 rounded-lg border appearance-none"
+                      style={{
+                        borderColor: "var(--color-gray-300)",
+                        backgroundColor: "var(--color-white)",
+                      }}
+                    >
+                      <option value="">Pilih Cabang Olahraga</option>
+                      {cabors.map((cabor) => (
+                        <option key={cabor.id} value={cabor.id}>
+                          {cabor.nama_cabor}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <svg
+                        className="w-4 h-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mb-4">
@@ -372,29 +502,40 @@ const ResultsPage = () => {
                   >
                     Nomor Pertandingan
                   </label>
-                  <input
-                    list="nomor-list"
-                    value={newResult.nomor}
-                    onInput={(e) => {
-                      const value = e.target.value;
-                      if (allUniqueNomors.includes(value)) {
-                        e.target.blur(); 
+                  <div className="relative">
+                    <select
+                      value={newResult.nomor}
+                      onChange={(e) =>
+                        setNewResult({ ...newResult, nomor: e.target.value })
                       }
-                    }}
-                    onChange={(e) =>
-                      setNewResult({ ...newResult, nomor: e.target.value })
-                    }
-                    className="w-full p-3 rounded-lg border"
-                    style={{
-                      borderColor: "var(--color-gray-300)",
-                    }}
-                    placeholder="Masukkan nomor pertandingan"
-                  />
-                  <datalist id="nomor-list">
-                    {allUniqueNomors.map((nomor, index) => (
-                      <option key={index} value={nomor} />
-                    ))}
-                  </datalist>
+                      className="w-full p-3 rounded-lg border appearance-none"
+                      style={{
+                        borderColor: "var(--color-gray-300)",
+                        backgroundColor: "var(--color-white)",
+                      }}
+                      disabled={!newResult.cabor}
+                    >
+                      <option value="">Pilih Nomor Pertandingan</option>
+                      {nomorsForModal.map((nomor) => (
+                        <option key={nomor.id} value={nomor.id}>
+                          {nomor.nama_nomor}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <svg
+                        className="w-4 h-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mb-4">
@@ -438,19 +579,39 @@ const ResultsPage = () => {
                           </svg>
                         </div>
                       </div>
-                      <input
-                        type="number"
-                        min="1"
-                        value={athlete.posisi}
-                        onChange={(e) =>
-                          handleAthleteChange(index, "posisi", e.target.value)
-                        }
-                        className="w-40 p-3 rounded-lg border"
-                        style={{
-                          borderColor: "var(--color-gray-300)",
-                        }}
-                        placeholder="Posisi"
-                      />
+
+                      <div className="relative w-40">
+                        <select
+                          value={athlete.posisi}
+                          onChange={(e) =>
+                            handleAthleteChange(index, "posisi", e.target.value)
+                          }
+                          className="w-full p-3 rounded-lg border appearance-none"
+                          style={{
+                            borderColor: "var(--color-gray-300)",
+                          }}
+                        >
+                          <option value="">Pilih Medali</option>
+                          <option value="Emas">Emas</option>
+                          <option value="Perak">Perak</option>
+                          <option value="Perunggu">Perunggu</option>
+                          <option value="Partisipasi">Partisipasi</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                          <svg
+                            className="w-4 h-4"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+
                       {newResult.atlet.length > 1 && (
                         <button
                           type="button"
@@ -498,7 +659,10 @@ const ResultsPage = () => {
 
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={() => setShowModal(false)}
+                    onClick={() => {
+                      setShowModal(false);
+                      setError(null);
+                    }}
                     className="px-4 py-2 rounded-lg border"
                     style={{
                       borderColor: "var(--color-gray-300)",
@@ -507,10 +671,7 @@ const ResultsPage = () => {
                     Batal
                   </button>
                   <button
-                    onClick={() => {
-                      console.log("New result:", newResult);
-                      setShowModal(false);
-                    }}
+                    onClick={saveResults}
                     className="px-4 py-2 rounded-lg text-white"
                     style={{ backgroundColor: "var(--color-primary)" }}
                   >
@@ -574,7 +735,9 @@ const ResultsPage = () => {
                   key={result.id}
                   style={{ borderBottom: "1px solid var(--color-gray-200)" }}
                 >
-                  <td className="p-4">{result.nomor?.cabor?.nama_cabor || "N/A"}</td>
+                  <td className="p-4">
+                    {result.nomor?.cabor?.nama_cabor || "N/A"}
+                  </td>
                   <td className="p-4">{result.nomor?.nama_nomor || "N/A"}</td>
                   <td className="p-4">{result.atlet?.nama || "N/A"}</td>
                   <td className="p-4">
@@ -657,7 +820,8 @@ const ResultsPage = () => {
                     currentPage === page
                       ? "var(--color-primary)"
                       : "var(--color-gray-100)",
-                  color: currentPage === page ? "white" : "var(--color-gray-800)",
+                  color:
+                    currentPage === page ? "white" : "var(--color-gray-800)",
                 }}
               >
                 {page}
@@ -676,7 +840,9 @@ const ResultsPage = () => {
                     ? "var(--color-gray-200)"
                     : "var(--color-primary)",
                 color:
-                  currentPage === totalPages ? "var(--color-gray-600)" : "white",
+                  currentPage === totalPages
+                    ? "var(--color-gray-600)"
+                    : "white",
                 cursor: currentPage === totalPages ? "not-allowed" : "pointer",
               }}
             >

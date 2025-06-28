@@ -256,30 +256,7 @@ func AddAtlet(c *gin.Context) {
 		return
 	}
 	atlet.NamaSekolah = NamaSekolah
-	CaborID := c.PostForm("cabor_id")
-	if CaborID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  false,
-			"message": "Cabor harus dipilih",
-		})
-		return
-	}
-	caborID, err := strconv.ParseUint(CaborID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  false,
-			"message": "ID Cabor harus berupa angka",
-		})
-		return
-	}
-	var cabor models.Cabor
-	if err := setup.DB.First(&cabor, caborID).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  false,
-			"message": fmt.Sprintf("Cabor dengan ID %d tidak ditemukan", caborID),
-		})
-		return
-	}
+	
 	tx := setup.DB.Begin()
 	if err := tx.Create(&atlet).Error; err != nil {
 		tx.Rollback()
@@ -361,19 +338,7 @@ func UpdateAtlet(c *gin.Context) {
 	if NamaSekolah != "" {
 		atlet.NamaSekolah = NamaSekolah
 	}
-	CaborID := c.PostForm("cabor_id")
-	if CaborID != "" {
-		caborID, err := strconv.ParseUint(CaborID, 10, 32)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "ID Cabor harus berupa angka"})
-			return
-		}
-		var cabor models.Cabor
-		if err := setup.DB.First(&cabor, caborID).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Cabor dengan ID %d tidak ditemukan", caborID)})
-			return
-		}
-	}
+
 	foto3x4Path, err := handleFileUpload(c, "foto_3x4", "foto_3x4")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

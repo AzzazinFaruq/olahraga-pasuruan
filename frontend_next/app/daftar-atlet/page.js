@@ -6,8 +6,6 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import axios from "axios";
 
-
-
 const AthletesPage = () => {
   const [nomorList, setNomorList] = useState([]);
   const [cabangOlahragaList, setCabangOlahragaList] = useState([]);
@@ -74,12 +72,14 @@ const AthletesPage = () => {
       const matchesSearch =
         searchQuery === "" ||
         athlete.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        athlete.cabor?.nama_cabor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (athlete.nomor && athlete.nomor.toLowerCase().includes(searchQuery.toLowerCase()));
+        athlete.cabor?.nama_cabor
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (athlete.nomor &&
+          athlete.nomor.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCabor && matchesNomor && matchesSearch;
     });
   }, [filterCabor, filterNomor, searchQuery, athletes]);
-
 
   // Pagination
   const indexOfLastAthlete = currentPage * athletesPerPage;
@@ -92,13 +92,13 @@ const AthletesPage = () => {
 
   const handleFilterCaborChange = (e) => {
     setFilterCabor(e.target.value);
-    setFilterNomor(""); 
+    setFilterNomor("");
     setCurrentPage(1);
   };
 
   const handleFilterNomorChange = (e) => {
     setFilterNomor(e.target.value);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   return (
@@ -125,80 +125,9 @@ const AthletesPage = () => {
           DAFTAR ATLET
         </h1>
 
-        {/* Filter */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <select
-              value={filterCabor}
-              onChange={handleFilterCaborChange}
-              className="w-full p-3 rounded-lg border appearance-none"
-              style={{
-                borderColor: "var(--color-gray-300)",
-                backgroundColor: "var(--color-white)",
-                paddingTop: "1.5rem",
-              }}
-            >
-              <option value="">Semua Cabang Olahraga</option>
-              {cabangOlahragaList.map((cabor) => (
-                <option key={cabor.id} value={cabor.nama_cabor}>
-                  {cabor.nama_cabor}
-                </option>
-              ))}
-            </select>
-            <span
-              className="absolute left-3 top-3 text-xs pointer-events-none"
-              style={{ color: "var(--color-gray-500)" }}
-            >
-              Cabang Olahraga
-            </span>
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <div className="flex-1 relative">
-            <select
-              value={filterNomor}
-              onChange={handleFilterNomorChange}
-              className="w-full p-3 rounded-lg border appearance-none"
-              style={{
-                borderColor: "var(--color-gray-300)",
-                backgroundColor: "var(--color-white)",
-                paddingTop: "1.5rem",
-              }}
-              disabled={!filterCabor}
-            >
-              <option value="">Semua Nomor Pertandingan</option>
-              {uniqueNomors.map((nomor) => (
-                <option key={nomor.id} value={nomor.nama_nomor}>
-                  {nomor.nama_nomor}
-                </option>
-              ))}
-            </select>
-            <span
-              className="absolute left-3 top-3 text-xs pointer-events-none"
-              style={{ color: "var(--color-gray-500)" }}
-            >
-              Nomor Pertandingan
-            </span>
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <div className="relative w-full md:w-64">
+        {/* Search */}
+        <div className="mb-8 flex flex-col md:flex-row gap-4 items-start justify-center">
+          <div className="relative w-full">
             <input
               type="text"
               placeholder="Cari atlet..."
@@ -227,6 +156,29 @@ const AthletesPage = () => {
               </svg>
             </div>
           </div>
+
+          <Link
+            href="/daftar-atlet/form"
+            className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+            style={{
+              backgroundColor: "var(--color-primary)",
+              color: "white",
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Tambah Atlet
+          </Link>
         </div>
 
         {/* Grid */}
@@ -248,7 +200,7 @@ const AthletesPage = () => {
                       }}
                     >
                       <img
-                        src={athlete.foto_3x4}
+                        src={`http://localhost:8080/${athlete.foto_3x4}`}
                         alt={athlete.foto_bebas}
                         className="w-full h-full object-cover"
                       />

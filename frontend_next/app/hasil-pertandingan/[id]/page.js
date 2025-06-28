@@ -16,23 +16,27 @@ const ResultDetail = ({ params }) => {
     const fetchResultDetail = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8080/api/hasil/${params.id}`);
+        const response = await axios.get(
+          `http://localhost:8080/api/hasil/${params.id}`
+        );
         setResult(response.data.data);
-        
+
         // Fetch related results from the same nomor
         if (response.data.data.nomor_id) {
-          const relatedResponse = await axios.get(`http://localhost:8080/api/hasil/nomor/${response.data.data.nomor_id}`);
+          const relatedResponse = await axios.get(
+            `http://localhost:8080/api/hasil/nomor/${response.data.data.nomor_id}`
+          );
           setRelatedResults(relatedResponse.data.data || []);
         }
       } catch (err) {
-        console.error('Error fetching result detail:', err);
-        setError('Gagal memuat detail hasil pertandingan');
+        console.error("Error fetching result detail:", err);
+        setError("Gagal memuat detail hasil pertandingan");
         // Fallback to static data if API fails
         setResult({
           id: parseInt(params.id),
-          nomor: { 
-            nama_nomor: "Individual Hyung PUTRI", 
-            cabor: { nama_cabor: "HAPKIDO" } 
+          nomor: {
+            nama_nomor: "Individual Hyung PUTRI",
+            cabor: { nama_cabor: "HAPKIDO" },
           },
           atlet: { nama: "Siti Rahmawati" },
           medali: "Emas",
@@ -72,7 +76,7 @@ const ResultDetail = ({ params }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID');
+    return date.toLocaleDateString("id-ID");
   };
 
   const getMedalColor = (medali) => {
@@ -103,7 +107,15 @@ const ResultDetail = ({ params }) => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--background)", color: "var(--foreground)" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }}
+      >
         <Navbar />
         <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="text-center">
@@ -118,7 +130,15 @@ const ResultDetail = ({ params }) => {
 
   if (error && !result) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--background)", color: "var(--foreground)" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }}
+      >
         <Navbar />
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
@@ -210,9 +230,17 @@ const ResultDetail = ({ params }) => {
                 }}
               >
                 <div className="w-16 h-16 rounded-full overflow-hidden mr-4 bg-gray-300 flex items-center justify-center">
-                  <span className="text-gray-600 font-bold text-lg">
-                    {result?.atlet?.nama?.charAt(0) || "A"}
-                  </span>
+                  {result?.atlet?.foto_3x4 ? (
+                    <img
+                      src={`http://localhost:8080/${result?.atlet?.foto_3x4}`}
+                      alt={result?.atlet?.nama || "Atlet"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-600 font-bold text-lg">
+                      {result?.atlet?.nama?.charAt(0) || "A"}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex-1">
@@ -228,7 +256,9 @@ const ResultDetail = ({ params }) => {
                 </div>
 
                 <div
-                  className={`px-4 py-1 rounded-full font-bold ${getMedalClass(result?.medali)}`}
+                  className={`px-4 py-1 rounded-full font-bold ${getMedalClass(
+                    result?.medali
+                  )}`}
                 >
                   {result?.medali || "Partisipasi"}
                 </div>
@@ -269,14 +299,16 @@ const ResultDetail = ({ params }) => {
                 </h3>
                 <div className="space-y-3">
                   {relatedResults
-                    .filter(r => r.id !== result.id)
+                    .filter((r) => r.id !== result.id)
                     .map((relatedResult, index) => (
                       <div
                         key={relatedResult.id}
                         className="flex items-center p-3 rounded-lg"
                         style={{
                           backgroundColor: "var(--color-gray-50)",
-                          borderLeft: `4px solid ${getMedalColor(relatedResult.medali)}`,
+                          borderLeft: `4px solid ${getMedalColor(
+                            relatedResult.medali
+                          )}`,
                         }}
                       >
                         <div className="w-12 h-12 rounded-full overflow-hidden mr-3 bg-gray-300 flex items-center justify-center">
@@ -292,7 +324,9 @@ const ResultDetail = ({ params }) => {
                         </div>
 
                         <div
-                          className={`px-3 py-1 rounded-full font-bold text-sm ${getMedalClass(relatedResult.medali)}`}
+                          className={`px-3 py-1 rounded-full font-bold text-sm ${getMedalClass(
+                            relatedResult.medali
+                          )}`}
                         >
                           {relatedResult.medali || "Partisipasi"}
                         </div>

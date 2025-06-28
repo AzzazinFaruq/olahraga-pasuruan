@@ -71,6 +71,7 @@ func main() {
 		protected.DELETE("/atlet-cabor/remove/:atlet_id/:cabor_id", controllers.RemoveAtletFromCabor)
 		protected.GET("/atlet-cabor/stats", controllers.GetAtletCaborStats)
 	}
+	router.Static("/public", "./public")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

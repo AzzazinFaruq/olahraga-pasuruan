@@ -61,7 +61,7 @@ const AthleteDetail = () => {
               <div className="md:w-1/3 mb-6 md:mb-0 flex justify-center">
                 <div className="w-64 h-80 rounded-xl overflow-hidden">
                   <img
-                    src={athlete.foto_3x4}
+                    src={`http://localhost:8080/${athlete.foto_3x4}`}
                     alt={athlete.foto_bebas}
                     className="w-full h-full object-cover"
                   />
@@ -81,10 +81,13 @@ const AthleteDetail = () => {
                 </h1>
 
                 <div className="space-y-4">
-                  <Info label="TTL" value={`${athlete.tempat_lahir}, ${athlete.tanggal_lahir}`} />
+                  <Info
+                    label="TTL"
+                    value={`${athlete.tempat_lahir}, ${athlete.tanggal_lahir}`}
+                  />
                   <Info label="Jenis Kelamin" value={athlete.jenis_kelamin} />
                   <Info label="Alamat" value={athlete.alamat} />
-                  <Info label="Sekolah" value={athlete.sekolah} />
+                  <Info label="Sekolah" value={athlete.nama_sekolah} />
                   <Info label="Nama Orang Tua/Wali" value={athlete.nama_ortu} />
                 </div>
               </div>
