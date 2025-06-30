@@ -36,17 +36,14 @@ func AddDokumentasi(c *gin.Context) {
 		}
 		dokumentasi.Dokumentasi = uploadPath
 	}
-	atletId := c.PostForm("atlet_id")
-	if atletId == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "atlet_id tidak boleh kosong"})
+	HasilPertandinganIdStr := strings.TrimSpace(c.PostForm("hasil_pertandingan_id"))
+	if HasilPertandinganIdStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": "ID Hasil Pertandingan tidak boleh kosong",
+		})
 		return
 	}
-	var atletIdInt uint
-	if _, err := fmt.Sscanf(atletId, "%d", &atletIdInt); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "atlet_id harus berupa angka yang valid"})
-		return
-	}
-	dokumentasi.AtletId = atletIdInt
 	if err := setup.DB.Create(&dokumentasi).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambah dokumentasi"})
 		return
@@ -101,14 +98,13 @@ func UpdateDokumentasi(c *gin.Context) {
 		}
 		dokumentasi.Dokumentasi = uploadPath
 	}
-	atletId := c.PostForm("atlet_id")
-	if atletId != "" {
-		var atletIdInt uint
-		if _, err := fmt.Sscanf(atletId, "%d", &atletIdInt); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "atlet_id harus berupa angka yang valid"})
-			return
-		}
-		dokumentasi.AtletId = atletIdInt
+	HasilPertandinganIdStr := strings.TrimSpace(c.PostForm("hasil_pertandingan_id"))
+	if HasilPertandinganIdStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": "ID Hasil Pertandingan tidak boleh kosong",
+		})
+		return
 	}
 	if err := setup.DB.Save(&dokumentasi).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update dokumentasi"})
