@@ -8,3 +8,9 @@ var JenisKelamin = map[int]string{
 	1: "Laki-laki",
 	2: "Perempuan",
 }
+var Medali = map[int]string{
+	1: "Emas",
+	2: "Perak",
+	3: "Perunggu",
+	4: "Partisipasi",
+}

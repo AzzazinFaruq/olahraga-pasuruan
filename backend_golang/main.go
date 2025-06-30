@@ -34,11 +34,14 @@ func main() {
 	{
 		protected.POST("/logout", controllers.Logout)
 		protected.GET("/user", controllers.GetCurrentUser)
+		// Atlet routes
 		protected.POST("/atlet/add", controllers.AddAtlet)
 		protected.GET("/atlet", controllers.GetAllAtlet)
 		protected.GET("/atlet/:id", controllers.GetAtletById)
 		protected.PUT("/atlet/update/:id", controllers.UpdateAtlet)
 		protected.DELETE("/atlet/delete/:id", controllers.DeleteAtlet)
+		protected.GET("/atlet/count", controllers.CountAtlet)
+		// Cabor routes
 		protected.POST("/cabor/add", controllers.AddCabor)
 		protected.GET("/cabor", controllers.GetAllCabor)
 		protected.GET("/cabor/list", controllers.GetCaborList)
@@ -51,6 +54,8 @@ func main() {
 		protected.PUT("/nomor/update/:id", controllers.UpdateNomor)
 		protected.DELETE("/nomor/delete/:id", controllers.DeleteNomor)
 		protected.GET("/nomor/cabor/:cabor_id", controllers.GetNomorByCaborId)
+		protected.GET("/cabor/count", controllers.CountCabor)
+		protected.GET("/nomor/count", controllers.CountNomor)
 		// Hasil Pertandingan routes
 		protected.POST("/hasil/add", controllers.CreateHasil)
 		protected.GET("/hasil", controllers.GetAllHasil)

@@ -115,3 +115,14 @@ func DeleteCabor(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Cabor berhasil dihapus"})
 }
+func CountCabor(c *gin.Context) {
+	var count int64
+	if err := setup.DB.Model(&models.Cabor{}).Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": false})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"jumlah_cabor": count,
+		"status": true,
+	})
+}

@@ -389,3 +389,14 @@ func DeleteAtlet(c *gin.Context) {
 	tx.Commit()
 	c.JSON(http.StatusOK, gin.H{"message": "Atlet berhasil dihapus beserta file-filenya"})
 }
+func CountAtlet(c *gin.Context) {
+	var count int64
+	if err := setup.DB.Model(&models.Atlet{}).Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": false})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"jumlah_atlet": count,
+		"status": true,
+	})
+}

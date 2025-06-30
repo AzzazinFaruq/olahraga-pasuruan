@@ -86,3 +86,14 @@ func GetNomorByCaborId(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"data": nomors})
 }
+func CountNomor(c *gin.Context) {
+	var count int64
+	if err := setup.DB.Model(&models.Nomor{}).Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "status": false})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"jumlah_nomor": count,
+		"status": true,
+	})
+}

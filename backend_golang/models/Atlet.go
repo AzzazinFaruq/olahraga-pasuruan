@@ -16,7 +16,7 @@ type Atlet struct {
 	Sekolah      string    `json:"sekolah" gorm:"type:enum('SD','SMP','SMA','SMK','Universitas','Lainnya');not null"`
 	NamaSekolah  string    `json:"nama_sekolah" gorm:"type:varchar(255);not null"`
 	// One-to-Many relationships
-	Dokumentasis []Dokumentasi      `gorm:"foreignKey:AtletId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"dokumentasis,omitempty"`
+
 	Hasil        []HasilPertandingan `gorm:"foreignKey:AtletId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"hasil,omitempty"`
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
