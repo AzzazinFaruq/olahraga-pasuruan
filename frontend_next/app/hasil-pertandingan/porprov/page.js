@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import axios from "axios";
+import axiosClient from "../../auths/auth-context/axiosClient";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import Filter from "../../components/filter";
@@ -49,11 +49,11 @@ const PorprovPage = () => {
         setLoading(true);
         const [resultsRes, athletesRes, caborsRes, nomorsRes, usersRes] =
           await Promise.all([
-            axios.get("http://localhost:8080/api/hasil"),
-            axios.get("http://localhost:8080/api/atlet"),
-            axios.get("http://localhost:8080/api/cabor"),
-            axios.get("http://localhost:8080/api/nomor"),
-            axios.get("http://localhost:8080/api/user"),
+            axiosClient.get("api/atlet"),
+            axiosClient.get("api/hasil"),
+            axiosClient.get("api/cabor"),
+            axiosClient.get("api/nomor"),
+            axiosClient.get("api/user"),
           ]);
 
         // Filter hanya data dengan event_name "PORPROV JATIM XI"
@@ -221,7 +221,7 @@ const PorprovPage = () => {
         formData.append("event_name", "PORPROV JATIM XI");
         formData.append("medali", athlete.posisi);
         formData.append("catatan", newResult.catatan);
-        formData.append("user_id", );
+        formData.append("user_id");
 
         newResult.dokumentasi.forEach((doc, idx) => {
           formData.append(`dokumentasi_file_${idx}`, doc.file);

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axiosClient from "../../auths/auth-context/axiosClient";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 
@@ -35,9 +35,7 @@ const ResultDetail = ({ params: paramsPromise }) => {
       try {
         setLoading(true);
 
-        const response = await axios.get(
-          `http://localhost:8080/api/hasil/${resultId}`
-        );
+        const response = await axiosClient.get(`api/hasil/${resultId}`);
         const mainResult = response.data.data;
         setResult(mainResult);
 
@@ -47,8 +45,8 @@ const ResultDetail = ({ params: paramsPromise }) => {
           const nomorId = mainResult.nomor_id;
 
           if (eventName && caborId && nomorId) {
-            const nomorResultsResponse = await axios.get(
-              `http://localhost:8080/api/hasil/nomor/${nomorId}`
+            const nomorResultsResponse = await axiosClient.get(
+              `api/hasil/nomor/${nomorId}`
             );
 
             const filteredResults = nomorResultsResponse.data.data.filter(

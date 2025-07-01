@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
-import axios from "axios";
+import axiosClient from "../../auths/auth-context/axiosClient";
 import { useParams } from "next/navigation";
 
 const formatTanggal = (dateString) => {
@@ -19,8 +19,8 @@ const AthleteDetail = () => {
 
   useEffect(() => {
     if (!id) return;
-    axios
-      .get(`http://localhost:8080/api/atlet/${id}`)
+    axiosClient
+      .get(`api/atlet/${id}`)
       .then((res) => {
         setAthlete(res.data.data);
       })

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import axios from "axios";
+import axiosClient from "../auths/auth-context/axiosClient";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Filter from "../components/filter";
@@ -48,10 +48,10 @@ const ResultsPage = () => {
         setLoading(true);
         const [resultsRes, athletesRes, caborsRes, nomorsRes] =
           await Promise.all([
-            axios.get("http://localhost:8080/api/hasil"),
-            axios.get("http://localhost:8080/api/atlet"),
-            axios.get("http://localhost:8080/api/cabor"),
-            axios.get("http://localhost:8080/api/nomor"),
+            axiosClient.get("api/hasil"),
+            axiosClient.get("api/atlet"),
+            axiosClient.get("api/cabor"),
+            axiosClient.get("api/nomor"),
           ]);
 
         setAllResults(resultsRes.data.data || []);

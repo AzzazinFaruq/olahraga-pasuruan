@@ -5,7 +5,7 @@ import Image from "next/image";
 import Logo from "@/public/logo/logo-koni-black.png";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import axios from "axios";
+import axiosClient from "@/app/auths/auth-context/axiosClient";
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");
@@ -47,7 +47,7 @@ const SignupPage = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8080/register", {
+      const response = await axiosClient.post("/register", {
         username,
         email,
         password,

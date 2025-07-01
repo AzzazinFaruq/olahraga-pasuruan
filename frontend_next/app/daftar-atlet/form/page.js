@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
-import axios from "axios";
+import axiosClient from "../../auths/auth-context/axiosClient";
 import { useRouter } from "next/navigation";
 
 const AddAthletePage = () => {
@@ -34,7 +34,7 @@ const AddAthletePage = () => {
     // Fetch cabang olahraga data
     const fetchCabangOlahraga = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/cabor");
+        const response = await axiosClient.get("api/cabor");
         if (response.data.status && response.data.data) {
           setCabangOlahragaList(response.data.data);
         }
@@ -103,10 +103,10 @@ const AddAthletePage = () => {
       athleteForm.append("nama_sekolah", formData.nama_sekolah);
       athleteForm.append("nama_ortu", formData.nama_ortu);
       if (formData.foto_3x4) athleteForm.append("foto_3x4", formData.foto_3x4);
-      if (formData.foto_bebas) athleteForm.append("foto_bebas", formData.foto_bebas);
+      if (formData.foto_bebas)
+        athleteForm.append("foto_bebas", formData.foto_bebas);
 
-      const athleteRes = await axios.post(
-        "http://localhost:8080/api/atlet/add",
+      const athleteRes = await axiosClient.get("api/atlet/add",
         athleteForm,
         {
           headers: {
@@ -127,8 +127,7 @@ const AddAthletePage = () => {
         assignForm.append("atlet_id", newAthleteId);
         assignForm.append("cabor_id", formData.cabor_id);
 
-        const assignRes = await axios.post(
-          "http://localhost:8080/api/atlet-cabor/assign",
+        const assignRes = await axiosClient.get("api/atlet-cabor/assign",
           assignForm,
           {
             headers: {
@@ -138,7 +137,9 @@ const AddAthletePage = () => {
         );
 
         if (!assignRes.data.status) {
-          throw new Error(assignRes.data.message || "Gagal menghubungkan atlet dengan cabor");
+          throw new Error(
+            assignRes.data.message || "Gagal menghubungkan atlet dengan cabor"
+          );
         }
       }
 

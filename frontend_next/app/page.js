@@ -3,7 +3,8 @@
 import React from "react";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
-import axios from "axios";
+import axiosClient from "../app/auths/auth-context/axiosClient";
+
 import { useState, useEffect } from "react";
 
 const Dashboard = () => {
@@ -25,8 +26,9 @@ const Dashboard = () => {
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8080/api/atlet")
+    Promise.all([
+      axiosClient.get("api/atlet"),
+    ])
       .then((res) => {
         setPesan(res.data.message);
       })
