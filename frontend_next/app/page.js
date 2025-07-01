@@ -1,13 +1,17 @@
-// app/page.js
 "use client";
 
 import React from "react";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import axios from "axios";
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 const Dashboard = () => {
+  const bannerImages = [
+    { id: 1, src: "/image/banner-1.jpg", alt: "Banner 1" },
+    { id: 2, src: "/image/banner-2.jpg", alt: "Banner 2" },
+  ];
+
   const galleryImages = [
     { id: 1, alt: "Pertandingan Basket" },
     { id: 2, alt: "Upacara Pembukaan" },
@@ -17,16 +21,24 @@ const Dashboard = () => {
     { id: 6, alt: "Lomba Renang" },
   ];
 
-  const [pesan, setPesan] = useState('');
+  const [pesan, setPesan] = useState("");
+  const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
-    axios.get("http://localhost:8080/api/atlet")
+    axios
+      .get("http://localhost:8080/api/atlet")
       .then((res) => {
         setPesan(res.data.message);
       })
       .catch((err) => {
-        console.error('Gagal ambil data:', err);
+        console.error("Gagal ambil data:", err);
       });
+
+    const interval = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % bannerImages.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -41,8 +53,41 @@ const Dashboard = () => {
     >
       <Navbar />
 
+      {/* Banner */}
+      <section className="relative w-full h-48 md:h-80 lg:h-160 overflow-hidden bg-gray-200">
+        {bannerImages.map((img, index) => (
+          <div
+            key={img.id}
+            className={`absolute inset-0 transition-opacity duration-1000 flex items-center justify-center ${
+              index === currentBanner ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+          >
+            <img
+              src={img.src}
+              alt={img.alt}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
+
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-20">
+          {bannerImages.map((img, index) => (
+            <button
+              key={img.id}
+              onClick={() => setCurrentBanner(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentBanner
+                  ? "bg-white scale-125"
+                  : "bg-gray-400/80"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      </section>
+
       <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Header*/}
+        {/* Header */}
         <div
           className="flex flex-col md:flex-row items-center justify-between mb-12"
           style={{
@@ -55,7 +100,7 @@ const Dashboard = () => {
         >
           <div className="mb-8 md:mb-0 md:mr-8 flex items-center justify-center">
             <img
-              src="/logo-kabpasuruan.png"
+              src="/logo/logo-kabpasuruan.png"
               alt="Logo Kab. Pasuruan"
               className="w-48 h-48 object-contain"
             />
@@ -142,6 +187,63 @@ const Dashboard = () => {
           </div>
         </div>
 
+        <section className="container mx-auto px-4 py-12">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="md:w-2/3">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                  Sambutan
+                </h2>
+                <div
+                  className="w-24 h-1 rounded-full"
+                  style={{
+                    background:
+                      "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
+                  }}
+                ></div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-8">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                  H.M. Rusdi Sutejo
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                  laboris nisi ut aliquip ex ea commodo consequat.
+                  <br />
+                  <br />
+                  Duis aute irure dolor in reprehenderit in voluptate velit esse
+                  cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                  occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum. Sed ut perspiciatis unde
+                  omnis iste natus error sit voluptatem accusantium doloremque
+                  laudantium.
+                  <br />
+                  <br />
+                  Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut
+                  odit aut fugit, sed quia consequuntur magni dolores eos qui
+                  ratione voluptatem sequi nesciunt. Neque porro quisquam est,
+                  qui dolorem ipsum quia dolor sit amet.
+                </p>
+              </div>
+            </div>
+
+            <div className="md:w-1/3 flex justify-center">
+              <div className="relative">
+                <div className="rounded-xl w-80 h-120 overflow-hidden border-4 border-white shadow-lg">
+                  <img
+                    src="/images/"
+                    alt="H.M. Rusdi Sutejo"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Slider */}
         <div className="mb-16">
           <h2
@@ -151,7 +253,7 @@ const Dashboard = () => {
               color: "var(--color-gray-800)",
             }}
           >
-            DOKUMENTASI
+            Dokumentasi
           </h2>
           <div
             className="relative w-full overflow-hidden rounded-2xl p-4"
@@ -164,22 +266,12 @@ const Dashboard = () => {
               <div className="absolute flex animate-scroll whitespace-nowrap">
                 {galleryImages.map((img) => (
                   <div key={img.id} className="inline-block mx-4">
-                    <div
-                      className="bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl w-96 h-56 flex items-center justify-center font-medium shadow-md"
-                      style={{ fontSize: "var(--font-size-normal)" }}
-                    >
-                      {img.alt}
-                    </div>
+                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
                   </div>
                 ))}
                 {galleryImages.map((img) => (
                   <div key={`copy-${img.id}`} className="inline-block mx-4">
-                    <div
-                      className="bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl w-96 h-56 flex items-center justify-center font-medium shadow-md"
-                      style={{ fontSize: "var(--font-size-normal)" }}
-                    >
-                      {img.alt}
-                    </div>
+                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
                   </div>
                 ))}
               </div>
@@ -189,22 +281,12 @@ const Dashboard = () => {
               <div className="absolute flex animate-scroll-reverse whitespace-nowrap">
                 {galleryImages.map((img) => (
                   <div key={img.id} className="inline-block mx-4">
-                    <div
-                      className="bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl w-96 h-56 flex items-center justify-center font-medium shadow-md"
-                      style={{ fontSize: "var(--font-size-normal)" }}
-                    >
-                      {img.alt}
-                    </div>
+                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
                   </div>
                 ))}
                 {galleryImages.map((img) => (
                   <div key={`copy-${img.id}`} className="inline-block mx-4">
-                    <div
-                      className="bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl w-96 h-56 flex items-center justify-center font-medium shadow-md"
-                      style={{ fontSize: "var(--font-size-normal)" }}
-                    >
-                      {img.alt}
-                    </div>
+                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
                   </div>
                 ))}
               </div>

@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"backend_golang/models"
 	"backend_golang/setup"
@@ -6,9 +7,11 @@ import (
 	"net/http"
 	"os"
 	"time"
+
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
+
 func Register(c *gin.Context) {
 	var input struct {
 		Username        string `json:"username" binding:"required,min=3,max=50"`
@@ -22,7 +25,7 @@ func Register(c *gin.Context) {
 	}
 	var existingUser models.User
 	if err := setup.DB.Where("email = ? OR username = ?", input.Email, input.Username).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "User with this email or username already exists", "status": false})
+		c.JSON(http.StatusConflict, gin.H{"error": "Email/Username sudah digunakan", "status": false})
 		return
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
@@ -41,7 +44,7 @@ func Register(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "User created successfully", 
+		"message": "User created successfully",
 		"status":  true,
 		"data": gin.H{
 			"username": user.Username,
@@ -61,11 +64,11 @@ func Login(c *gin.Context) {
 	}
 	var user models.User
 	if err := setup.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password", "status": false})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email belum terdaftar", "status": false})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password", "status": false})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Password tidak sesuai", "status": false})
 		return
 	}
 	var tokenDuration time.Duration
