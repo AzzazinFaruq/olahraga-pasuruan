@@ -28,6 +28,7 @@ const PorprovPage = () => {
   const [athletes, setAthletes] = useState([]);
   const [cabors, setCabors] = useState([]);
   const [nomors, setNomors] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -46,12 +47,13 @@ const PorprovPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resultsRes, athletesRes, caborsRes, nomorsRes] =
+        const [resultsRes, athletesRes, caborsRes, nomorsRes, usersRes] =
           await Promise.all([
             axios.get("http://localhost:8080/api/hasil"),
             axios.get("http://localhost:8080/api/atlet"),
             axios.get("http://localhost:8080/api/cabor"),
             axios.get("http://localhost:8080/api/nomor"),
+            axios.get("http://localhost:8080/api/user"),
           ]);
 
         // Filter hanya data dengan event_name "PORPROV JATIM XI"
@@ -63,6 +65,7 @@ const PorprovPage = () => {
         setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
         setNomors(nomorsRes.data.data || []);
+        setUsers(usersRes.data.data || []);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Gagal memuat data");
@@ -80,8 +83,6 @@ const PorprovPage = () => {
 
   const filteredResults = useMemo(() => {
     const groupedResults = {};
-    
-    // Hanya proses data dengan event_name "PORPROV JATIM XI"
     allResults.forEach((result) => {
       const key = `${result.event_name}-${result.nomor?.cabor?.id}-${result.nomor?.id}`;
 
@@ -220,6 +221,7 @@ const PorprovPage = () => {
         formData.append("event_name", "PORPROV JATIM XI");
         formData.append("medali", athlete.posisi);
         formData.append("catatan", newResult.catatan);
+        formData.append("user_id", );
 
         newResult.dokumentasi.forEach((doc, idx) => {
           formData.append(`dokumentasi_file_${idx}`, doc.file);
