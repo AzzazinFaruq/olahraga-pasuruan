@@ -172,6 +172,7 @@ func CreateHasil(c *gin.Context) {
 		})
 		return
 	}
+	
 	// Check if nomor exists
 	var nomor models.Nomor
 	if err := setup.DB.First(&nomor, NomorId).Error; err != nil {
@@ -214,6 +215,17 @@ func CreateHasil(c *gin.Context) {
 		})
 		return
 	}
+	// Validate UserId
+	UserIdStr := strings.TrimSpace(c.PostForm("user_id"))
+	if UserIdStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": "ID User tidak boleh kosong",
+		})
+		return
+	}
+	UserId, err := strconv.ParseUint(UserIdStr, 10, 32)
+	hasil.UserId = uint(UserId)
 	hasil.Medali = Medali
 	// Catatan (optional)
 	Catatan := strings.TrimSpace(c.PostForm("catatan"))
@@ -322,6 +334,19 @@ func UpdateHasil(c *gin.Context) {
 			})
 			return
 		}
+	}
+	// Update UserId if provided
+	UserIdStr := c.PostForm("user_id")
+	if UserIdStr != "" {
+		UserId, err := strconv.ParseUint(UserIdStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":  "ID User harus berupa angka",
+				"status": false,
+			})
+			return
+		}
+		hasil.UserId = uint(UserId)
 	}
 	// Save to database
 	if err := setup.DB.Save(&hasil).Error; err != nil {
