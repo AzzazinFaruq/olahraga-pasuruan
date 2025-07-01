@@ -18,9 +18,9 @@ const AthletesPage = () => {
 
   useEffect(() => {
     Promise.all([
-      axiosClient.get("api/atlet"),
-      axiosClient.get("api/atlet-cabor?preload=true"),
-      axiosClient.get("api/cabor"),
+      axiosClient.get("publik/atlet"),
+      axiosClient.get("publik/atlet-cabor?preload=true"),
+      axiosClient.get("publik/cabor"),
     ])
       .then(([atletRes, atletCaborRes, caborRes]) => {
         setAthletes(atletRes.data.data);

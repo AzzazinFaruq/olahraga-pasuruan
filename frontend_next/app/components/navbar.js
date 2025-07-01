@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import LogoBlack from "@/public/logo/logo-koni-black.png";
 import LogoWhite from "@/public/logo/logo-koni-white.png";
 import Swal from "sweetalert2";
+import axiosClient from "../auths/auth-context/axiosClient";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -36,6 +37,7 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
+    axiosClient.post("api/logout");
     logout();
     Swal.fire({
       icon: "success",

@@ -35,7 +35,7 @@ const ResultDetail = ({ params: paramsPromise }) => {
       try {
         setLoading(true);
 
-        const response = await axiosClient.get(`api/hasil/${resultId}`);
+        const response = await axiosClient.get(`publik/hasil/${resultId}`);
         const mainResult = response.data.data;
         setResult(mainResult);
 

@@ -20,7 +20,7 @@ const AthleteDetail = () => {
   useEffect(() => {
     if (!id) return;
     axiosClient
-      .get(`api/atlet/${id}`)
+      .get(`publik/atlet-cabor/${id}`)
       .then((res) => {
         setAthlete(res.data.data);
       })
@@ -67,8 +67,8 @@ const AthleteDetail = () => {
               <div className="md:w-1/3 mb-6 md:mb-0 flex justify-center">
                 <div className="w-64 h-80 rounded-xl overflow-hidden">
                   <img
-                    src={`http://localhost:8080/${athlete.foto_3x4}`}
-                    alt={athlete.foto_bebas}
+                    src={`http://localhost:8080/${athlete.atlet.foto_3x4}`}
+                    alt={athlete.atlet.foto_bebas}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -83,20 +83,21 @@ const AthleteDetail = () => {
                     color: "var(--color-black)",
                   }}
                 >
-                  {athlete.nama}
+                  {athlete.atlet.nama}
                 </h1>
 
                 <div className="space-y-4">
                   <Info
                     label="TTL"
-                    value={`${athlete.tempat_lahir}, ${formatTanggal(
-                      athlete.tanggal_lahir
+                    value={`${athlete.atlet.tempat_lahir}, ${formatTanggal(
+                      athlete.atlet.tanggal_lahir
                     )}`}
                   />
-                  <Info label="Jenis Kelamin" value={athlete.jenis_kelamin} />
-                  <Info label="Alamat" value={athlete.alamat} />
-                  <Info label="Sekolah" value={athlete.nama_sekolah} />
-                  <Info label="Nama Orang Tua/Wali" value={athlete.nama_ortu} />
+                  <Info label="Jenis Kelamin" value={athlete.atlet.jenis_kelamin} />
+                  <Info label="Alamat" value={athlete.atlet.alamat} />
+                  <Info label="Sekolah" value={athlete.atlet.nama_sekolah} />
+                  <Info label="Nama Orang Tua/Wali" value={athlete.atlet.nama_ortu} />
+                  <Info label="Cabang Olahraga" value={athlete.cabor.nama_cabor} />
                 </div>
               </div>
             </div>

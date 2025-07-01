@@ -29,6 +29,21 @@ func main() {
 		authGroup.POST("/register", controllers.Register)
 		authGroup.POST("/login", controllers.Login)
 	}
+
+	publik := router.Group("/publik")
+	{
+		publik.GET("/atlet", controllers.GetAllAtlet)
+		publik.GET("/atlet/:id", controllers.GetAtletById)
+		publik.GET("/atlet-cabor", controllers.GetAllAtletCabor)
+		publik.GET("/cabor", controllers.GetAllCabor)
+		publik.GET("/nomor", controllers.GetAllNomor)
+		publik.GET("/hasil", controllers.GetAllHasil)
+		publik.GET("/dokumentasi", controllers.GetAllDokumentasi)
+		publik.GET("/dokumentasi/latest", controllers.GetLatestDokumentasi)
+		publik.GET("/atlet-cabor/:id", controllers.GetAtletCaborById)
+		publik.GET("/hasil/:id", controllers.GetHasilById)
+	}
+
 	protected := router.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
 	{

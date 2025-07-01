@@ -19,6 +19,18 @@ func GetAllAtletCabor(c *gin.Context) {
 		"status": true,
 	})
 }
+func GetAtletCaborById(c *gin.Context) {
+	id := c.Param("id")
+	var atletCabor models.AtletCabor
+	if err := setup.DB.Preload("Atlet").Preload("Cabor").First(&atletCabor, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error(), "status": false})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data":   atletCabor,
+		"status": true,
+	})
+}
 // AssignAtletToCabor - Assign athlete to sport
 func AssignAtletToCabor(c *gin.Context) {
 	var atletCabor models.AtletCabor

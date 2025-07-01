@@ -31,6 +31,7 @@ const PorprovPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [athletesForModal, setAthletesForModal] = useState([]);
 
   const resultsPerPage = 10;
 
@@ -47,13 +48,13 @@ const PorprovPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resultsRes, athletesRes, caborsRes, nomorsRes, usersRes] =
+        // Ambil semua data awal
+        const [athletesRes, resultsRes, caborsRes, nomorsRes] =
           await Promise.all([
-            axiosClient.get("api/atlet"),
-            axiosClient.get("api/hasil"),
-            axiosClient.get("api/cabor"),
-            axiosClient.get("api/nomor"),
-            axiosClient.get("api/user"),
+            axiosClient.get("publik/atlet"),
+            axiosClient.get("publik/hasil"),
+            axiosClient.get("publik/cabor"),
+            axiosClient.get("publik/nomor"),
           ]);
 
         // Filter hanya data dengan event_name "PORPROV JATIM XI"
@@ -65,7 +66,6 @@ const PorprovPage = () => {
         setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
         setNomors(nomorsRes.data.data || []);
-        setUsers(usersRes.data.data || []);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Gagal memuat data");
@@ -76,6 +76,31 @@ const PorprovPage = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const res = await axiosClient.get("api/user");
+      setUsers(res.data.data || []);
+    };
+    fetchUsers();
+  }, []);
+
+  // Ambil atlet sesuai cabor yang dipilih di form modal
+  useEffect(() => {
+    const fetchAthletesForModal = async () => {
+      if (!newResult.cabor) {
+        setAthletesForModal([]);
+        return;
+      }
+      try {
+        const res = await axiosClient.get(`api/atlet-cabor/cabor/${newResult.cabor}`);
+        setAthletesForModal(res.data.data || []);
+      } catch (err) {
+        setAthletesForModal([]);
+      }
+    };
+    fetchAthletesForModal();
+  }, [newResult.cabor]);
 
   const getMedal = (medali) => {
     return medali || "Partisipasi";
@@ -221,14 +246,11 @@ const PorprovPage = () => {
         formData.append("event_name", "PORPROV JATIM XI");
         formData.append("medali", athlete.posisi);
         formData.append("catatan", newResult.catatan);
-        formData.append("user_id");
+        formData.append("user_id", users.Id);
 
-        newResult.dokumentasi.forEach((doc, idx) => {
-          formData.append(`dokumentasi_file_${idx}`, doc.file);
-          formData.append(`dokumentasi_atlet_id_${idx}`, doc.atletId);
-        });
 
-        return axios.post("http://localhost:8080/api/hasil/add", formData, {
+
+        return axiosClient.post("api/hasil/add", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -237,7 +259,7 @@ const PorprovPage = () => {
 
       await Promise.all(promises);
 
-      const resultsRes = await axios.get("http://localhost:8080/api/hasil");
+      const resultsRes = await axiosClient.get("api/hasil");
       // Filter lagi hanya data PORPROV JATIM XI
       const porprovResults = (resultsRes.data.data || []).filter(
         (result) => result.event_name === "PORPROV JATIM XI"
@@ -340,7 +362,7 @@ const PorprovPage = () => {
           setShowModal={setShowModal}
           newResult={newResult}
           setNewResult={setNewResult}
-          athletes={athletes}
+          athletes={athletesForModal}
           cabors={cabors}
           nomors={nomors}
           saveResults={saveResults}
