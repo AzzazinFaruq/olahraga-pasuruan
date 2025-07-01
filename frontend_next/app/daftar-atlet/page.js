@@ -7,81 +7,80 @@ import Footer from "../components/footer";
 import axios from "axios";
 
 const AthletesPage = () => {
-  const [nomorList, setNomorList] = useState([]);
-  const [cabangOlahragaList, setCabangOlahragaList] = useState([]);
   const [athletes, setAthletes] = useState([]);
+  const [atletCabors, setAtletCabors] = useState([]);
+  const [cabangOlahragaList, setCabangOlahragaList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterCabor, setFilterCabor] = useState("");
-  const [filterNomor, setFilterNomor] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   const athletesPerPage = 9;
 
   useEffect(() => {
-    axios
-      .get("http://localhost:8080/api/atlet")
-      .then((res) => {
-        setAthletes(res.data.data);
-      })
-      .catch((err) => {
-        console.error("Gagal ambil data:", err);
-      });
-
-    axios
-      .get("http://localhost:8080/api/cabor")
-      .then((res) => {
-        setCabangOlahragaList(res.data.data);
+    Promise.all([
+      axios.get("http://localhost:8080/api/atlet"),
+      axios.get("http://localhost:8080/api/atlet-cabor?preload=true"),
+      axios.get("http://localhost:8080/api/cabor"),
+    ])
+      .then(([atletRes, atletCaborRes, caborRes]) => {
+        setAthletes(atletRes.data.data);
+        setAtletCabors(atletCaborRes.data.data);
+        setCabangOlahragaList(caborRes.data.data);
       })
       .catch((err) => {
         console.error("Gagal ambil data:", err);
       });
   }, []);
 
-  useEffect(() => {
-    if (filterCabor) {
-      // Cari id cabor dari nama_cabor
-      const selectedCabor = cabangOlahragaList.find(
-        (cabor) => cabor.nama_cabor === filterCabor
-      );
-      if (selectedCabor) {
-        axios
-          .get(`http://localhost:8080/api/nomor/cabor/${selectedCabor.id}`)
-          .then((res) => {
-            setNomorList(res.data.data);
-          })
-          .catch((err) => {
-            setNomorList([]);
-            console.error("Gagal ambil data nomor:", err);
-          });
-      } else {
-        setNomorList([]);
-      }
-    } else {
-      setNomorList([]);
-    }
-  }, [filterCabor, cabangOlahragaList]);
+  const caborMap = useMemo(() => {
+    const map = {};
+    cabangOlahragaList.forEach((cabor) => {
+      map[cabor.id] = cabor.nama_cabor;
+    });
+    return map;
+  }, [cabangOlahragaList]);
 
-  const uniqueNomors = useMemo(() => nomorList, [nomorList]);
+  const athletesWithCabor = useMemo(() => {
+    return athletes.map((athlete) => {
+      const athleteCabors = atletCabors.filter(
+        (ac) => ac.atlet_id === athlete.id
+      );
+
+      const caborNames = athleteCabors
+        .map((ac) => {
+          return (
+            ac.cabor?.nama_cabor ||
+            ac.Cabor?.nama_cabor ||
+            caborMap[ac.cabor_id]
+          );
+        })
+        .filter(Boolean);
+
+      const caborIds = athleteCabors.map((ac) => ac.cabor_id).filter(Boolean);
+
+      return {
+        ...athlete,
+        caborNames: caborNames.join(", ") || "Belum memiliki cabor",
+        caborIds,
+      };
+    });
+  }, [athletes, atletCabors, caborMap]);
 
   const filteredAthletes = useMemo(() => {
-    return athletes.filter((athlete) => {
+    return athletesWithCabor.filter((athlete) => {
       const matchesCabor =
-        filterCabor === "" || athlete.cabor?.nama_cabor === filterCabor;
-      const matchesNomor =
-        filterNomor === "" || athlete.nomor?.nama_nomor === filterNomor;
+        filterCabor === "" ||
+        (athlete.caborIds && athlete.caborIds.includes(parseInt(filterCabor)));
+
       const matchesSearch =
         searchQuery === "" ||
         athlete.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        athlete.cabor?.nama_cabor
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        (athlete.nomor &&
-          athlete.nomor.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesCabor && matchesNomor && matchesSearch;
-    });
-  }, [filterCabor, filterNomor, searchQuery, athletes]);
+        athlete.caborNames.toLowerCase().includes(searchQuery.toLowerCase());
 
-  // Pagination
+      return matchesCabor && matchesSearch;
+    });
+  }, [athletesWithCabor, filterCabor, searchQuery]);
+
   const indexOfLastAthlete = currentPage * athletesPerPage;
   const indexOfFirstAthlete = indexOfLastAthlete - athletesPerPage;
   const currentAthletes = filteredAthletes.slice(
@@ -92,12 +91,6 @@ const AthletesPage = () => {
 
   const handleFilterCaborChange = (e) => {
     setFilterCabor(e.target.value);
-    setFilterNomor("");
-    setCurrentPage(1);
-  };
-
-  const handleFilterNomorChange = (e) => {
-    setFilterNomor(e.target.value);
     setCurrentPage(1);
   };
 
@@ -125,8 +118,35 @@ const AthletesPage = () => {
           DAFTAR ATLET
         </h1>
 
-        {/* Search */}
         <div className="mb-8 flex flex-col md:flex-row gap-4 items-start justify-center">
+          <div className="relative w-full">
+            <select
+              value={filterCabor}
+              onChange={handleFilterCaborChange}
+              className="w-full p-3 rounded-lg border appearance-none"
+              style={{
+                borderColor: "var(--color-gray-300)",
+                backgroundColor: "var(--color-white)",
+              }}
+            >
+              <option value="">Semua Cabang Olahraga</option>
+              {cabangOlahragaList.map((cabor) => (
+                <option key={cabor.id} value={cabor.id}>
+                  {cabor.nama_cabor}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+
           <div className="relative w-full">
             <input
               type="text"
@@ -181,59 +201,47 @@ const AthletesPage = () => {
           </Link>
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {currentAthletes.length > 0 ? (
             currentAthletes.map((athlete) => (
-              <Link key={athlete.id} href={`/daftar-atlet/${athlete.id}`}>
-                <div
-                  className="bg-white rounded-xl shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300 cursor-pointer"
-                  style={{
-                    border: "1px solid var(--color-gray-200)",
-                  }}
-                >
-                  <div className="flex items-center p-4">
-                    <div
-                      className="w-20 h-20 rounded-full overflow-hidden mr-4"
-                      style={{
-                        backgroundColor: "var(--color-gray-100)",
-                      }}
-                    >
+              <Link
+                key={athlete.id}
+                href={`/daftar-atlet/${athlete.id}`}
+                className="block transform transition-transform duration-200 hover:scale-[1.02]"
+              >
+                <div className="flex items-center p-3 rounded-lg gap-4 h-full bg-white shadow-md transition-shadow duration-300 hover:shadow-lg">
+                  <div className="w-12 h-12 min-w-[48px] rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
+                    {athlete.foto_3x4 ? (
                       <img
                         src={`http://localhost:8080/${athlete.foto_3x4}`}
-                        alt={athlete.foto_bebas}
+                        alt={athlete.nama}
                         className="w-full h-full object-cover"
                       />
-                    </div>
-                    <div>
-                      <h3
-                        className="font-semibold"
-                        style={{
-                          fontSize: "var(--font-size-medium)",
-                          color: "var(--color-gray-800)",
-                        }}
-                      >
-                        {athlete.nama}
-                      </h3>
-                      <p
-                        className="text-sm"
-                        style={{ color: "var(--color-gray-600)" }}
-                      >
-                        {athlete.sport}
-                      </p>
-                    </div>
+                    ) : (
+                      <span className="text-gray-600 font-bold text-sm">
+                        {athlete.nama?.charAt(0) || "A"}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base truncate">
+                      {athlete.nama}
+                    </h3>
+                    <p className="text-sm text-gray-600 truncate">
+                      {athlete.caborNames}
+                    </p>
                   </div>
                 </div>
               </Link>
             ))
           ) : (
-            <div className="col-span-full text-center py-12">
+            <div className="text-center py-12 col-span-3">
               <p>Tidak ada atlet yang ditemukan</p>
             </div>
           )}
         </div>
 
-        {/* Pagination */}
         {filteredAthletes.length > athletesPerPage && (
           <div className="flex justify-center items-center space-x-2 mb-8">
             <button

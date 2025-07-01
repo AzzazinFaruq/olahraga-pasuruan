@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
@@ -19,14 +19,33 @@ const AddAthletePage = () => {
     sekolah: "",
     nama_sekolah: "",
     nama_ortu: "",
+    cabor_id: "",
     foto_3x4: null,
     foto_bebas: null,
   });
 
+  const [cabangOlahragaList, setCabangOlahragaList] = useState([]);
   const [preview3x4, setPreview3x4] = useState("");
   const [previewBebas, setPreviewBebas] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Fetch cabang olahraga data
+    const fetchCabangOlahraga = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/cabor");
+        if (response.data.status && response.data.data) {
+          setCabangOlahragaList(response.data.data);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil data cabang olahraga:", err);
+        setError("Gagal memuat daftar cabang olahraga");
+      }
+    };
+
+    fetchCabangOlahraga();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,22 +91,23 @@ const AddAthletePage = () => {
     setError("");
 
     try {
-      const formPayload = new FormData();
-      formPayload.append("nik", formData.nik);
-      formPayload.append("nama", formData.nama);
-      formPayload.append("tempat_lahir", formData.tempat_lahir);
-      formPayload.append("tanggal_lahir", formData.tanggal_lahir);
-      formPayload.append("jenis_kelamin", formData.jenis_kelamin);
-      formPayload.append("alamat", formData.alamat);
-      formPayload.append("sekolah", formData.sekolah);
-      formPayload.append("nama_sekolah", formData.nama_sekolah);
-      formPayload.append("nama_ortu", formData.nama_ortu);
-      formPayload.append("foto_3x4", formData.foto_3x4);
-      formPayload.append("foto_bebas", formData.foto_bebas);
+      // Step 1: Create athlete
+      const athleteForm = new FormData();
+      athleteForm.append("nik", formData.nik);
+      athleteForm.append("nama", formData.nama);
+      athleteForm.append("tempat_lahir", formData.tempat_lahir);
+      athleteForm.append("tanggal_lahir", formData.tanggal_lahir);
+      athleteForm.append("jenis_kelamin", formData.jenis_kelamin);
+      athleteForm.append("alamat", formData.alamat);
+      athleteForm.append("sekolah", formData.sekolah);
+      athleteForm.append("nama_sekolah", formData.nama_sekolah);
+      athleteForm.append("nama_ortu", formData.nama_ortu);
+      if (formData.foto_3x4) athleteForm.append("foto_3x4", formData.foto_3x4);
+      if (formData.foto_bebas) athleteForm.append("foto_bebas", formData.foto_bebas);
 
-      const response = await axios.post(
+      const athleteRes = await axios.post(
         "http://localhost:8080/api/atlet/add",
-        formPayload,
+        athleteForm,
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -95,14 +115,40 @@ const AddAthletePage = () => {
         }
       );
 
-      if (response.data.status) {
-        alert("Data atlet berhasil ditambahkan!");
-        router.push("/daftar-atlet");
+      if (!athleteRes.data.status) {
+        throw new Error(athleteRes.data.message || "Gagal menambahkan atlet");
       }
+
+      const newAthleteId = athleteRes.data.data.id;
+
+      // Step 2: Assign cabor if selected
+      if (formData.cabor_id) {
+        const assignForm = new FormData();
+        assignForm.append("atlet_id", newAthleteId);
+        assignForm.append("cabor_id", formData.cabor_id);
+
+        const assignRes = await axios.post(
+          "http://localhost:8080/api/atlet-cabor/assign",
+          assignForm,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        if (!assignRes.data.status) {
+          throw new Error(assignRes.data.message || "Gagal menghubungkan atlet dengan cabor");
+        }
+      }
+
+      alert("Data atlet berhasil ditambahkan!");
+      router.push("/daftar-atlet");
     } catch (err) {
       console.error("Error:", err);
       setError(
         err.response?.data?.message ||
+          err.message ||
           "Terjadi kesalahan saat menambahkan atlet"
       );
     } finally {
@@ -251,6 +297,42 @@ const AddAthletePage = () => {
                         placeholder="Masukkan nama orang tua/wali"
                         required
                       />
+                    </div>
+
+                    {/* Cabang Olahraga Dropdown */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Cabang Olahraga
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="cabor_id"
+                          value={formData.cabor_id}
+                          onChange={handleChange}
+                          className="w-full p-3 rounded-lg border border-gray-300 appearance-none"
+                          required
+                        >
+                          <option value="">Pilih Cabang Olahraga</option>
+                          {cabangOlahragaList.map((cabor) => (
+                            <option key={cabor.id} value={cabor.id}>
+                              {cabor.nama_cabor}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                          <svg
+                            className="w-4 h-4"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

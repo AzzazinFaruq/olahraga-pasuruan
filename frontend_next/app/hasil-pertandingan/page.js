@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import axios from "axios";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import Filter from "../components/filter";
+import Table from "../components/table";
+import Modal from "../components/modal";
 
 const ResultsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -18,6 +20,7 @@ const ResultsPage = () => {
     nomor: "",
     catatan: "",
     atlet: [{ id: "", posisi: "" }],
+    dokumentasi: [{ file: null, atletId: "" }],
   });
 
   // State for API data
@@ -32,10 +35,10 @@ const ResultsPage = () => {
 
   // Medal priority for sorting
   const medalPriority = {
-    "Emas": 1,
-    "Perak": 2,
-    "Perunggu": 3,
-    "Partisipasi": 4
+    Emas: 1,
+    Perak: 2,
+    Perunggu: 3,
+    Partisipasi: 4,
   };
 
   // Fetch data from API
@@ -58,41 +61,6 @@ const ResultsPage = () => {
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Gagal memuat data");
-        // Fallback to static data if API fails
-        setAllResults([
-          {
-            id: 1,
-            nomor: {
-              id: 1,
-              nama_nomor: "Individual Hyung PUTRI",
-              cabor: { id: 1, nama_cabor: "HAPKIDO" },
-            },
-            atlet: { id: 1, nama: "Siti Rahmawati" },
-            medali: "Emas",
-            event_name: "Porprov Pasuruan 2025",
-            created_at: "2025-06-16T00:00:00Z",
-          },
-          {
-            id: 2,
-            nomor: {
-              id: 1,
-              nama_nomor: "Individual Hyung PUTRI",
-              cabor: { id: 1, nama_cabor: "HAPKIDO" },
-            },
-            atlet: { id: 2, nama: "Ahmad Fauzi" },
-            medali: "Perak",
-            event_name: "Porprov Pasuruan 2025",
-            created_at: "2025-06-16T00:00:00Z",
-          },
-        ]);
-        setCabors([{ id: 1, nama_cabor: "HAPKIDO" }]);
-        setNomors([
-          { id: 1, nama_nomor: "Individual Hyung PUTRI", cabor_id: 1 },
-        ]);
-        setAthletes([
-          { id: 1, nama: "Siti Rahmawati" },
-          { id: 2, nama: "Ahmad Fauzi" },
-        ]);
       } finally {
         setLoading(false);
       }
@@ -107,36 +75,40 @@ const ResultsPage = () => {
 
   const filteredResults = useMemo(() => {
     const groupedResults = {};
-    
-    allResults.forEach(result => {
+    allResults.forEach((result) => {
+      if (result.event_name === "PORPROV JATIM XI") return;
+
       const key = `${result.event_name}-${result.nomor?.cabor?.id}-${result.nomor?.id}`;
-      
+
       if (!groupedResults[key]) {
         groupedResults[key] = [];
       }
-      
+
       groupedResults[key].push(result);
     });
 
-    const bestResults = Object.values(groupedResults).map(group => {
-      return group.sort((a, b) => 
-        medalPriority[a.medali] - medalPriority[b.medali]
+    const bestResults = Object.values(groupedResults).map((group) => {
+      return group.sort(
+        (a, b) => medalPriority[a.medali] - medalPriority[b.medali]
       )[0];
     });
 
-    // Apply filters to the best results
     return bestResults.filter((result) => {
-      const matchesCabor = 
-        filterCabor === "" || 
-        result.nomor?.cabor?.nama_cabor === filterCabor;
-      const matchesNomor = 
-        filterNomor === "" || 
-        result.nomor?.nama_nomor === filterNomor;
-      const matchesSearch = 
+      const matchesCabor =
+        filterCabor === "" || result.nomor?.cabor?.nama_cabor === filterCabor;
+      const matchesNomor =
+        filterNomor === "" || result.nomor?.nama_nomor === filterNomor;
+      const matchesSearch =
         searchQuery === "" ||
-        result.nomor?.cabor?.nama_cabor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        result.nomor?.nama_nomor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getMedal(result.medali)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.nomor?.cabor?.nama_cabor
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        result.nomor?.nama_nomor
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        getMedal(result.medali)
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         result.event_name?.toLowerCase().includes(searchQuery.toLowerCase());
 
       return matchesCabor && matchesNomor && matchesSearch;
@@ -187,6 +159,28 @@ const ResultsPage = () => {
     }));
   };
 
+  const addDokumentasi = () => {
+    setNewResult((prev) => ({
+      ...prev,
+      dokumentasi: [...prev.dokumentasi, { file: null, atletId: "" }],
+    }));
+  };
+
+  const removeDokumentasi = (index) => {
+    if (newResult.dokumentasi.length <= 1) return;
+    setNewResult((prev) => {
+      const updatedDokumentasi = [...prev.dokumentasi];
+      updatedDokumentasi.splice(index, 1);
+      return { ...prev, dokumentasi: updatedDokumentasi };
+    });
+  };
+
+  const handleDokumentasiChange = (index, field, value) => {
+    const updatedDokumentasi = [...newResult.dokumentasi];
+    updatedDokumentasi[index][field] = value;
+    setNewResult((prev) => ({ ...prev, dokumentasi: updatedDokumentasi }));
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -207,15 +201,31 @@ const ResultsPage = () => {
         }
       }
 
+      for (const doc of newResult.dokumentasi) {
+        if (!doc.file) {
+          setError("File dokumentasi wajib diisi");
+          return;
+        }
+      }
+
       const promises = newResult.atlet.map((athlete) => {
         const formData = new FormData();
         formData.append("atlet_id", athlete.id);
         formData.append("nomor_id", newResult.nomor);
         formData.append("event_name", newResult.eventName);
         formData.append("medali", athlete.posisi);
-        formData.append("catatan", newResult.catatan); 
+        formData.append("catatan", newResult.catatan);
 
-        return axios.post("http://localhost:8080/api/hasil/add", formData);
+        newResult.dokumentasi.forEach((doc, idx) => {
+          formData.append(`dokumentasi_file_${idx}`, doc.file);
+          formData.append(`dokumentasi_atlet_id_${idx}`, doc.atletId);
+        });
+
+        return axios.post("http://localhost:8080/api/hasil/add", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       });
 
       await Promise.all(promises);
@@ -225,11 +235,12 @@ const ResultsPage = () => {
 
       setShowModal(false);
       setNewResult({
-        eventName: "Porprov Pasuruan 2025",
+        eventName: "",
         cabor: "",
         nomor: "",
         catatan: "",
         atlet: [{ id: "", posisi: "" }],
+        dokumentasi: [{ file: null, atletId: "" }],
       });
       setError(null);
     } catch (err) {
@@ -240,11 +251,6 @@ const ResultsPage = () => {
       );
     }
   };
-
-  const nomorsForModal = useMemo(() => {
-    if (!newResult.cabor) return [];
-    return nomors.filter((n) => n.cabor_id == newResult.cabor);
-  }, [newResult.cabor, nomors]);
 
   if (loading) {
     return (
@@ -299,524 +305,42 @@ const ResultsPage = () => {
           </div>
         )}
 
-        <div className="mb-8 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="w-full md:flex-1 relative">
-              <select
-                value={filterCabor}
-                onChange={handleFilterCaborChange}
-                className="w-full p-3 rounded-lg border appearance-none"
-                style={{
-                  borderColor: "var(--color-gray-300)",
-                  backgroundColor: "var(--color-white)",
-                }}
-              >
-                <option value="">Semua Cabang Olahraga</option>
-                {cabors.map((cabor) => (
-                  <option key={cabor.id} value={cabor.nama_cabor}>
-                    {cabor.nama_cabor}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
+        <Filter
+          filterCabor={filterCabor}
+          handleFilterCaborChange={handleFilterCaborChange}
+          filterNomor={filterNomor}
+          handleFilterNomorChange={handleFilterNomorChange}
+          cabors={cabors}
+          nomors={nomors}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          setShowModal={setShowModal}
+        />
 
-            <div className="w-full md:flex-1 relative">
-              <select
-                value={filterNomor}
-                onChange={handleFilterNomorChange}
-                className="w-full p-3 rounded-lg border appearance-none"
-                style={{
-                  borderColor: "var(--color-gray-300)",
-                  backgroundColor: "var(--color-white)",
-                }}
-                disabled={!filterCabor}
-              >
-                <option value="">Semua Nomor Pertandingan</option>
-                {nomors
-                  .filter((nomor) => 
-                    filterCabor 
-                      ? cabors.find(c => c.nama_cabor === filterCabor)?.id === nomor.cabor_id
-                      : true
-                  )
-                  .map((nomor) => (
-                    <option key={nomor.id} value={nomor.nama_nomor}>
-                      {nomor.nama_nomor}
-                    </option>
-                  ))}
-              </select>
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+        <Table
+          currentResults={currentResults}
+          getMedal={getMedal}
+          formatDate={formatDate}
+        />
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Cari hasil pertandingan..."
-                className="w-full p-3 rounded-lg border"
-                style={{
-                  borderColor: "var(--color-gray-300)",
-                  backgroundColor: "var(--color-white)",
-                }}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
-              style={{
-                backgroundColor: "var(--color-primary)",
-                color: "white",
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Tambah Hasil
-            </button>
-          </div>
-        </div>
-
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-2xl">
-              <div className="p-6">
-                <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    style={{ color: "var(--color-gray-700)" }}
-                  >
-                    Nama Event
-                  </label>
-                  <input
-                    value={newResult.eventName}
-                    onChange={(e) =>
-                      setNewResult({ ...newResult, eventName: e.target.value })
-                    }
-                    className="w-full p-3 rounded-lg border"
-                    style={{
-                      borderColor: "var(--color-gray-300)",
-                    }}
-                    placeholder="Masukkan nama event"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    style={{ color: "var(--color-gray-700)" }}
-                  >
-                    Cabang Olahraga
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={newResult.cabor}
-                      onChange={(e) =>
-                        setNewResult({
-                          ...newResult,
-                          cabor: e.target.value,
-                          nomor: "",
-                        })
-                      }
-                      className="w-full p-3 rounded-lg border appearance-none"
-                      style={{
-                        borderColor: "var(--color-gray-300)",
-                        backgroundColor: "var(--color-white)",
-                      }}
-                    >
-                      <option value="">Pilih Cabang Olahraga</option>
-                      {cabors.map((cabor) => (
-                        <option key={cabor.id} value={cabor.id}>
-                          {cabor.nama_cabor}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    style={{ color: "var(--color-gray-700)" }}
-                  >
-                    Nomor Pertandingan
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={newResult.nomor}
-                      onChange={(e) =>
-                        setNewResult({ ...newResult, nomor: e.target.value })
-                      }
-                      className="w-full p-3 rounded-lg border appearance-none"
-                      style={{
-                        borderColor: "var(--color-gray-300)",
-                        backgroundColor: "var(--color-white)",
-                      }}
-                      disabled={!newResult.cabor}
-                    >
-                      <option value="">Pilih Nomor Pertandingan</option>
-                      {nomorsForModal.map((nomor) => (
-                        <option key={nomor.id} value={nomor.id}>
-                          {nomor.nama_nomor}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    style={{ color: "var(--color-gray-700)" }}
-                  >
-                    Catatan (Opsional)
-                  </label>
-                  <textarea
-                    value={newResult.catatan}
-                    onChange={(e) => 
-                      setNewResult({ ...newResult, catatan: e.target.value })
-                    }
-                    className="w-full p-3 rounded-lg border"
-                    style={{
-                      borderColor: "var(--color-gray-300)",
-                    }}
-                    placeholder="Masukkan catatan tambahan"
-                    rows="3"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-1"
-                    style={{ color: "var(--color-gray-700)" }}
-                  >
-                    Atlet
-                  </label>
-                  {newResult.atlet.map((athlete, index) => (
-                    <div key={index} className="flex gap-2 mb-2 items-center">
-                      <div className="flex-1 relative">
-                        <select
-                          value={athlete.id}
-                          onChange={(e) =>
-                            handleAthleteChange(index, "id", e.target.value)
-                          }
-                          className="w-full p-3 rounded-lg border pr-10 appearance-none"
-                          style={{
-                            borderColor: "var(--color-gray-300)",
-                          }}
-                        >
-                          <option value="">Pilih Atlet</option>
-                          {athletes.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.nama}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                          <svg
-                            className="w-4 h-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-
-                      <div className="relative w-40">
-                        <select
-                          value={athlete.posisi}
-                          onChange={(e) =>
-                            handleAthleteChange(index, "posisi", e.target.value)
-                          }
-                          className="w-full p-3 rounded-lg border appearance-none"
-                          style={{
-                            borderColor: "var(--color-gray-300)",
-                          }}
-                        >
-                          <option value="">Pilih Medali</option>
-                          <option value="Emas">Emas</option>
-                          <option value="Perak">Perak</option>
-                          <option value="Perunggu">Perunggu</option>
-                          <option value="Partisipasi">Partisipasi</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                          <svg
-                            className="w-4 h-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-
-                      {newResult.atlet.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeAthlete(index)}
-                          className="p-2 text-red-500 hover:text-red-700"
-                          aria-label="Hapus atlet"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addAthlete}
-                    className="flex items-center gap-1 text-sm mt-2"
-                    style={{ color: "var(--color-primary)" }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Tambah Atlet
-                  </button>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      setError(null);
-                    }}
-                    className="px-4 py-2 rounded-lg border"
-                    style={{
-                      borderColor: "var(--color-gray-300)",
-                    }}
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={saveResults}
-                    className="px-4 py-2 rounded-lg text-white"
-                    style={{ backgroundColor: "var(--color-primary)" }}
-                  >
-                    Simpan
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="overflow-x-auto rounded-lg shadow-lg mb-8">
-          <table
-            className="w-full"
-            style={{
-              borderCollapse: "collapse",
-              backgroundColor: "var(--color-white)",
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: "var(--color-gray-100)" }}>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  Event
-                </th>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  Cabang Olahraga
-                </th>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  Nomor
-                </th>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  Atlet
-                </th>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  Medali
-                </th>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  Tanggal
-                </th>
-                <th
-                  className="p-4 text-left"
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                ></th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentResults.map((result) => (
-                <tr
-                  key={result.id}
-                  style={{ borderBottom: "1px solid var(--color-gray-200)" }}
-                >
-                  <td className="p-4">
-                    {result.event_name || "Porprov Pasuruan 2025"}
-                  </td>
-                  <td className="p-4">
-                    {result.nomor?.cabor?.nama_cabor || "N/A"}
-                  </td>
-                  <td className="p-4">{result.nomor?.nama_nomor || "N/A"}</td>
-                  <td className="p-4">{result.atlet?.nama || "N/A"}</td>
-                  <td className="p-4">
-                    {result.medali && (
-                      <span
-                        className={`px-2 py-1 rounded-full ${
-                          result.medali === "Emas"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : result.medali === "Perak"
-                            ? "bg-gray-100 text-gray-800"
-                            : result.medali === "Perunggu"
-                            ? "bg-yellow-700 text-white"
-                            : "bg-gray-200 text-gray-800"
-                        }`}
-                      >
-                        {getMedal(result.medali)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4">{formatDate(result.created_at)}</td>
-                  <td className="p-4">
-                    <Link href={`/hasil-pertandingan/${result.id}`}>
-                      <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-6 w-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="var(--color-primary)"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Modal
+          showModal={showModal}
+          setShowModal={setShowModal}
+          newResult={newResult}
+          setNewResult={setNewResult}
+          athletes={athletes}
+          cabors={cabors}
+          nomors={nomors}
+          saveResults={saveResults}
+          error={error}
+          setError={setError}
+          handleAthleteChange={handleAthleteChange}
+          addAthlete={addAthlete}
+          removeAthlete={removeAthlete}
+          addDokumentasi={addDokumentasi}
+          removeDokumentasi={removeDokumentasi}
+          handleDokumentasiChange={handleDokumentasiChange}
+        />
 
         {filteredResults.length === 0 && !loading && (
           <div className="text-center py-8">

@@ -75,6 +75,13 @@ func main() {
 		protected.DELETE("/atlet-cabor/delete/:id", controllers.DeleteAtletCabor)
 		protected.DELETE("/atlet-cabor/remove/:atlet_id/:cabor_id", controllers.RemoveAtletFromCabor)
 		protected.GET("/atlet-cabor/stats", controllers.GetAtletCaborStats)
+		// Dokumentasi
+		protected.GET("/dokumentasi", controllers.GetAllDokumentasi)
+		protected.GET("/dokumentasi/:id", controllers.GetDokumentasiById)
+		protected.GET("/dokumentasi/latest", controllers.GetLatestDokumentasi)
+		protected.POST("/dokumentasi", controllers.AddDokumentasi)
+		protected.PUT("/dokumentasi", controllers.UpdateDokumentasi)
+		protected.DELETE("/dokumentasi", controllers.DeleteDokumentasi)
 	}
 	router.Static("/public", "./public")
 	port := os.Getenv("PORT")

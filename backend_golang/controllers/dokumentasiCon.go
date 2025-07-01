@@ -58,6 +58,14 @@ func GetAllDokumentasi(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"data": dokumentasi})
 }
+func GetLatestDokumentasi(c *gin.Context) {
+	var dokumentasi models.Dokumentasi
+	if err := setup.DB.Order("created_at DESC").First(&dokumentasi).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": dokumentasi})
+}
 func GetDokumentasiById(c *gin.Context) {
 	id := c.Param("id")
 	var dokumentasi models.Dokumentasi

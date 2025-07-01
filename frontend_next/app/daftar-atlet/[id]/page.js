@@ -8,9 +8,9 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 
 const formatTanggal = (dateString) => {
-  const options = { day: 'numeric', month: 'long', year: 'numeric' };
+  const options = { day: "numeric", month: "long", year: "numeric" };
   const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', options);
+  return date.toLocaleDateString("id-ID", options);
 };
 
 const AthleteDetail = () => {
@@ -51,13 +51,13 @@ const AthleteDetail = () => {
 
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <Link
-            href="/daftar-atlet"
-            className="inline-block mb-6"
+          <button
+            onClick={() => router.back()}
+            className="inline-block mb-6 cursor-pointer"
             style={{ color: "var(--color-primary)" }}
           >
             &larr; Kembali
-          </Link>
+          </button>
 
           <div
             className="bg-white rounded-2xl shadow-xl p-8"
@@ -89,7 +89,9 @@ const AthleteDetail = () => {
                 <div className="space-y-4">
                   <Info
                     label="TTL"
-                    value={`${athlete.tempat_lahir}, ${formatTanggal(athlete.tanggal_lahir)}`}
+                    value={`${athlete.tempat_lahir}, ${formatTanggal(
+                      athlete.tanggal_lahir
+                    )}`}
                   />
                   <Info label="Jenis Kelamin" value={athlete.jenis_kelamin} />
                   <Info label="Alamat" value={athlete.alamat} />

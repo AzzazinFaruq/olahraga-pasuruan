@@ -87,7 +87,6 @@ const Navbar = () => {
               Daftar Atlet
             </Link>
 
-            {/* Hasil Pertandingan Dropdown */}
             <div
               className="relative"
               onMouseEnter={() => handleMouseEnter("results")}
@@ -324,7 +323,11 @@ const Navbar = () => {
                 <div className="mt-4">
                   <button
                     onClick={handleLogout}
-                    className="w-full mt-2 py-2 px-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+                    className={`w-full mt-2 py-2 px-4 font-bold rounded-lg transition-colors ${
+                      isDashboard
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "bg-white text-[var(--color-primary)] hover:bg-gray-200"
+                    }`}
                   >
                     Logout
                   </button>

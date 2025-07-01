@@ -266,6 +266,34 @@ func AddAtlet(c *gin.Context) {
 		})
 		return
 	}
+
+	caborIdStr := strings.TrimSpace(c.PostForm("cabor_id"))
+if caborIdStr != "" {
+    caborId, err := strconv.ParseUint(caborIdStr, 10, 32)
+    if err != nil {
+        tx.Rollback()
+        c.JSON(http.StatusBadRequest, gin.H{
+            "status":  false,
+            "message": "ID Cabang Olahraga harus berupa angka",
+        })
+        return
+    }
+
+    // ALUULLL WAS HERE
+    atletCabor := models.AtletCabor{
+        AtletId: atlet.Id,
+        CaborId: uint(caborId),
+    }
+    if err := tx.Create(&atletCabor).Error; err != nil {
+        tx.Rollback()
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "status":  false,
+            "message": "Gagal menghubungkan atlet dengan cabor: " + err.Error(),
+        })
+        return
+    }
+}
+
 	tx.Commit()
 	setup.DB.Preload("Cabor").First(&atlet, atlet.Id)
 	c.JSON(http.StatusCreated, gin.H{
