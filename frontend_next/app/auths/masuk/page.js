@@ -6,7 +6,7 @@ import Image from "next/image";
 import Logo from "@/public/logo/logo-koni-black.png";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import axios from "axios";
+import axiosClient from "@/app/auths/auth-context/axiosClient";
 import Swal from "sweetalert2";
 
 const LoginPage = () => {
@@ -28,10 +28,13 @@ const LoginPage = () => {
     setFormError("");
 
     try {
-      const response = await axios.post("http://localhost:8080/login", {
+      const response = await axiosClient.post("/login", {
         email,
         password,
         remember_me: rememberMe,
+      },
+      {
+        withCredentials: true,
       });
 
       if (response.data.status) {

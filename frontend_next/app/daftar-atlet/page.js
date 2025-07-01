@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
-import axios from "axios";
+import axiosClient from "../auths/auth-context/axiosClient";
 
 const AthletesPage = () => {
   const [athletes, setAthletes] = useState([]);
@@ -18,9 +18,9 @@ const AthletesPage = () => {
 
   useEffect(() => {
     Promise.all([
-      axios.get("http://localhost:8080/api/atlet"),
-      axios.get("http://localhost:8080/api/atlet-cabor?preload=true"),
-      axios.get("http://localhost:8080/api/cabor"),
+      axiosClient.get("api/atlet"),
+      axiosClient.get("api/atlet-cabor?preload=true"),
+      axiosClient.get("api/cabor"),
     ])
       .then(([atletRes, atletCaborRes, caborRes]) => {
         setAthletes(atletRes.data.data);
