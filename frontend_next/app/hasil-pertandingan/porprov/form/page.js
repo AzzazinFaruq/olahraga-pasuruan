@@ -25,18 +25,21 @@ const AddResultPage = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [athletesForModal, setAthletesForModal] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Fetch data saat komponen dimuat
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Ambil semua data awal
-        const [athletesRes, caborsRes, nomorsRes, usersRes] = await Promise.all([
-          axiosClient.get("publik/atlet"),
-          axiosClient.get("publik/cabor"),
-          axiosClient.get("publik/nomor"),
-          axiosClient.get("api/user"),
-        ]);
+        const [athletesRes, caborsRes, nomorsRes, usersRes] = await Promise.all(
+          [
+            axiosClient.get("publik/atlet"),
+            axiosClient.get("publik/cabor"),
+            axiosClient.get("publik/nomor"),
+            axiosClient.get("api/user"),
+          ]
+        );
 
         setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
@@ -51,6 +54,19 @@ const AddResultPage = () => {
     fetchData();
   }, []);
 
+  // Ambil user aktif
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await axiosClient.get("api/user");
+        setCurrentUser(res.data.data);
+      } catch (err) {
+        console.error("Gagal mengambil user", err);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
   // Ambil atlet sesuai cabor yang dipilih
   useEffect(() => {
     const fetchAthletesForModal = async () => {
@@ -59,7 +75,9 @@ const AddResultPage = () => {
         return;
       }
       try {
-        const res = await axiosClient.get(`api/atlet-cabor/cabor/${formData.cabor}`);
+        const res = await axiosClient.get(
+          `api/atlet-cabor/cabor/${formData.cabor}`
+        );
         setAthletesForModal(res.data.data || []);
       } catch (err) {
         setAthletesForModal([]);
@@ -152,6 +170,7 @@ const AddResultPage = () => {
 
     try {
       // Validasi
+
       if (!formData.cabor || !formData.nomor) {
         setError("Pilih cabang olahraga dan nomor pertandingan");
         return;
@@ -164,24 +183,30 @@ const AddResultPage = () => {
         }
       }
 
-      for (const doc of formData.dokumentasi) {
-        if (!doc.file) {
-          setError("File dokumentasi wajib diisi");
-          return;
-        }
+      const athleteIds = formData.atlet.map((a) => a.id);
+      if (new Set(athleteIds).size !== athleteIds.length) {
+        setError("Satu atlet hanya boleh diinput sekali!");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!currentUser?.id) {
+        setError("Data user belum dimuat");
+        setIsSubmitting(false);
+        return;
       }
 
       // Kirim data ke API
       const promises = formData.atlet.map((athlete) => {
-        const formData = new FormData();
-        formData.append("atlet_id", athlete.id);
-        formData.append("nomor_id", formData.nomor);
-        formData.append("event_name", "PORPROV JATIM XI");
-        formData.append("medali", athlete.posisi);
-        formData.append("catatan", formData.catatan);
-        formData.append("user_id", users.Id);
+        const form = new FormData();
+        form.append("atlet_id", athlete.id);
+        form.append("nomor_id", formData.nomor);
+        form.append("event_name", formData.eventName);
+        form.append("medali", athlete.posisi);
+        form.append("catatan", formData.catatan);
+        form.append("user_id", currentUser.id);
 
-        return axiosClient.post("api/hasil/add", formData, {
+        return axiosClient.post("api/hasil/add", form, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -191,20 +216,22 @@ const AddResultPage = () => {
       await Promise.all(promises);
 
       // Kirim dokumentasi
-      const docPromises = formData.dokumentasi.map((doc) => {
+      const dokumentasiPromises = formData.dokumentasi
+      .filter(doc => doc.file && doc.atletId)
+      .map((doc) => {
         const docFormData = new FormData();
         docFormData.append("atlet_id", doc.atletId);
         docFormData.append("file", doc.file);
-        docFormData.append("event_name", "PORPROV JATIM XI");
+        docFormData.append("event_name", formData.eventName);
 
         return axiosClient.post("api/dokumentasi/add", docFormData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         });
       });
 
-      await Promise.all(docPromises);
+      if (dokumentasiPromises.length > 0) {
+        await Promise.all(dokumentasiPromises);
+      }
 
       alert("Data hasil pertandingan berhasil ditambahkan!");
       router.push("/porprov");
@@ -393,11 +420,7 @@ const AddResultPage = () => {
                         <select
                           value={athlete.posisi}
                           onChange={(e) =>
-                            handleAthleteChange(
-                              index,
-                              "posisi",
-                              e.target.value
-                            )
+                            handleAthleteChange(index, "posisi", e.target.value)
                           }
                           className="w-full p-3 rounded-lg border appearance-none border-gray-300"
                           required
@@ -479,7 +502,7 @@ const AddResultPage = () => {
                           type="file"
                           onChange={(e) => handleFileChange(index, e)}
                           className="w-full p-2 rounded-lg border border-gray-300"
-                          required
+                          // required
                         />
                       </div>
                       <div className="flex-1 relative">
@@ -493,10 +516,10 @@ const AddResultPage = () => {
                             )
                           }
                           className="w-full p-2 rounded-lg border appearance-none border-gray-300"
-                          required
+                          // required
                         >
                           <option value="">Pilih Atlet</option>
-                          {athletes.map((a) => (
+                          {athletesForModal.map((a) => (
                             <option key={a.id} value={a.id}>
                               {a.nama}
                             </option>

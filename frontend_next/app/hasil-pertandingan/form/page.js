@@ -156,11 +156,6 @@ const AddResultPage = () => {
 
     try {
       // Validasi
-      if (!formData.eventName) {
-        setError("Nama Event wajib diisi");
-        return;
-      }
-
       if (!formData.cabor || !formData.nomor) {
         setError("Pilih cabang olahraga dan nomor pertandingan");
         return;
@@ -173,31 +168,37 @@ const AddResultPage = () => {
         }
       }
 
-      for (const doc of formData.dokumentasi) {
-        if (!doc.file) {
-          setError("File dokumentasi wajib diisi");
-          return;
-        }
-      }
-
       // Kirim data ke API
-      const hasilFormData = new FormData();
-      hasilFormData.append("event_name", formData.eventName);
-      hasilFormData.append("cabor_id", formData.cabor);
-      hasilFormData.append("nomor_id", formData.nomor);
-      hasilFormData.append("catatan", formData.catatan);
-      hasilFormData.append("user_id", users.Id);
+      const promises = formData.atlet.map((athlete) => {
+        const formData = new FormData();
+        formData.append("atlet_id", athlete.id);
+        formData.append("nomor_id", formData.nomor);
+        formData.append("event_name", formData.eventName);
+        formData.append("medali", athlete.posisi);
+        formData.append("catatan", formData.catatan);
+        formData.append("user_id", users.Id);
 
-      const hasilRes = await axiosClient.post("api/hasil/add", hasilFormData);
-      const hasilId = hasilRes.data.data.id;
+        return axiosClient.post("api/hasil/add", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      });
+
+      await Promise.all(promises);
 
       // Kirim dokumentasi
       const docPromises = formData.dokumentasi.map((doc) => {
         const docFormData = new FormData();
-        docFormData.append("dokumentasi", doc.file);
-        docFormData.append("hasil_pertandingan_id", hasilId);
+        docFormData.append("atlet_id", doc.atletId);
+        docFormData.append("file", doc.file);
+        docFormData.append("event_name", doc.eventName);
 
-        return axiosClient.post("api/dokumentasi", docFormData);
+        return axiosClient.post("api/dokumentasi/add", docFormData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       });
 
       await Promise.all(docPromises);
@@ -477,7 +478,7 @@ const AddResultPage = () => {
                           type="file"
                           onChange={(e) => handleFileChange(index, e)}
                           className="w-full p-2 rounded-lg border border-gray-300"
-                          required
+                          // required
                         />
                       </div>
                       <div className="flex-1 relative">
@@ -491,7 +492,7 @@ const AddResultPage = () => {
                             )
                           }
                           className="w-full p-2 rounded-lg border appearance-none border-gray-300"
-                          required
+                          // required
                         >
                           <option value="">Pilih Atlet</option>
                           {athletes.map((a) => (

@@ -1,4 +1,3 @@
-// app/hasil-pertandingan/page.js
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";

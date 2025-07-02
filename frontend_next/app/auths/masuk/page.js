@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAuth } from '@/app/auths/auth-context/page';
+import { useAuth } from "@/app/auths/auth-context/page";
 import Image from "next/image";
 import Logo from "@/public/logo/logo-koni-black.png";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import axiosClient from "@/app/auths/auth-context/axiosClient";
 import Swal from "sweetalert2";
 
 const LoginPage = () => {
-  const { login } = useAuth(); 
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -28,21 +28,27 @@ const LoginPage = () => {
     setFormError("");
 
     try {
-      const response = await axiosClient.post("/login", {
-        email,
-        password,
-        remember_me: rememberMe,
-      },
-      {
-        withCredentials: true,
-      });
+      const response = await axiosClient.post(
+        "/login",
+        {
+          email,
+          password,
+          remember_me: rememberMe,
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
-      if (response.data.status) {
-        login({
-          username: response.data.data.username,
-          email: response.data.data.email,
-          role: response.data.data.role
-        });
+      if (response.data.status && response.data.token) {
+        login(
+          {
+            username: response.data.data.username,
+            email: response.data.data.email,
+            role: response.data.data.role,
+          },
+          response.data.token
+        );
 
         Swal.fire({
           icon: "success",

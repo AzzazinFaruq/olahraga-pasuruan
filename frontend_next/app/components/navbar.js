@@ -13,7 +13,7 @@ import axiosClient from "../auths/auth-context/axiosClient";
 const Navbar = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null); // 'results' atau 'profile'
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [hoverTimeout, setHoverTimeout] = useState(null);
   const pathname = usePathname();
   const router = useRouter();

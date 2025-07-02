@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import axiosClient from "../../auths/auth-context/axiosClient";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 const formatTanggal = (dateString) => {
   const options = { day: "numeric", month: "long", year: "numeric" };
@@ -15,6 +14,7 @@ const formatTanggal = (dateString) => {
 
 const AthleteDetail = () => {
   const { id } = useParams();
+  const router = useRouter();
   const [athlete, setAthlete] = useState(null);
 
   useEffect(() => {

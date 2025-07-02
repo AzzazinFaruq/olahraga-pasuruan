@@ -26,9 +26,8 @@ const Dashboard = () => {
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
-    Promise.all([
-      axiosClient.get("api/atlet"),
-    ])
+    axiosClient
+      .get("api/atlet")
       .then((res) => {
         setPesan(res.data.message);
       })
@@ -190,26 +189,50 @@ const Dashboard = () => {
         </div>
 
         <section className="container mx-auto px-4 py-12">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="md:w-2/3">
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                  Sambutan
-                </h2>
-                <div
-                  className="w-24 h-1 rounded-full"
-                  style={{
-                    background:
-                      "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
-                  }}
-                ></div>
-              </div>
+          <div className="mb-6">
+            <h2
+              className="text-3xl font-bold text-gray-800 mb-2"
+              style={{ fontSize: "var(--font-size-large)" }}
+            >
+              Sambutan
+            </h2>
+            <div
+              className="w-24 h-1 rounded-full"
+              style={{
+                background:
+                  "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
+              }}
+            ></div>
+          </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                  H.M. Rusdi Sutejo
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl mb-10">
+            <div className="flex flex-col md:flex-row">
+              <div className="md:w-1/3 flex items-center justify-center p-6">
+                <div className="relative rounded-xl overflow-hidden border-4 border-white shadow-lg w-full max-w-xs aspect-[2/3]">
+                  <img
+                    src="image/bupati-pasuruan.png"
+                    alt="H.M. Rusdi Sutejo"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              <div className="md:w-2/3 p-6">
+                <h3
+                  className="font-bold text-gray-800 mb-4"
+                  style={{ fontSize: "var(--font-size-large)" }}
+                >
+                  H.M. RUSDI SUTEJO
+                  <span
+                    className="block font-normal text-gray-500 mt-1"
+                    style={{ fontSize: "var(--font-size-normal)" }}
+                  >
+                    Bupati Kabupaten Pasuruan
+                  </span>
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
+                <p
+                  className="text-gray-600 leading-relaxed"
+                  style={{ fontSize: "var(--font-size-normal)" }}
+                >
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
                   do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                   Ut enim ad minim veniam, quis nostrud exercitation ullamco
@@ -218,32 +241,54 @@ const Dashboard = () => {
                   <br />
                   Duis aute irure dolor in reprehenderit in voluptate velit esse
                   cillum dolore eu fugiat nulla pariatur. Excepteur sint
-                  occaecat cupidatat non proident, sunt in culpa qui officia
-                  deserunt mollit anim id est laborum. Sed ut perspiciatis unde
-                  omnis iste natus error sit voluptatem accusantium doloremque
-                  laudantium.
-                  <br />
-                  <br />
-                  Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut
-                  odit aut fugit, sed quia consequuntur magni dolores eos qui
-                  ratione voluptatem sequi nesciunt. Neque porro quisquam est,
-                  qui dolorem ipsum quia dolor sit amet.
+                  occaecat cupidatat non proident.
                 </p>
               </div>
             </div>
+          </div>
 
-            <div className="md:w-1/3 flex justify-center">
-              <div className="relative">
-                <div className="rounded-xl w-80 h-120 overflow-hidden border-4 border-white shadow-lg">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl mb-10">
+            <div className="flex flex-col md:flex-row">
+              <div className="md:w-1/3 flex items-center justify-center p-6">
+                <div className="relative rounded-xl overflow-hidden border-4 border-white shadow-lg w-full max-w-xs aspect-[2/3]">
                   <img
-                    src="/images/"
+                    src="image/ketua-koni.jpeg"
                     alt="H.M. Rusdi Sutejo"
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
+              <div className="md:w-2/3 p-6">
+                <h3
+                  className="font-bold text-gray-800 mb-4"
+                  style={{ fontSize: "var(--font-size-large)" }}
+                >
+                  MAMAT ARYO SETIAWAN
+                  <span
+                    className="block font-normal text-gray-500 mt-1"
+                    style={{ fontSize: "var(--font-size-normal)" }}
+                  >
+                    Ketua KONI Kabupaten Pasuruan
+                  </span>
+                </h3>
+                <p
+                  className="text-gray-600 leading-relaxed"
+                  style={{ fontSize: "var(--font-size-normal)" }}
+                >
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                  laboris nisi ut aliquip ex ea commodo consequat.
+                  <br />
+                  <br />
+                  Duis aute irure dolor in reprehenderit in voluptate velit esse
+                  cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                  occaecat cupidatat non proident.
+                </p>
+              </div>
             </div>
           </div>
+         
         </section>
 
         {/* Slider */}
