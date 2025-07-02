@@ -6,32 +6,20 @@ import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import Filter from "../../components/filter";
 import Table from "../../components/table";
-import Modal from "../../components/modal";
+import Link from "next/link";
 
 const PorprovPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterCabor, setFilterCabor] = useState("");
   const [filterNomor, setFilterNomor] = useState("");
-  const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [newResult, setNewResult] = useState({
-    eventName: "PORPROV JATIM XI",
-    cabor: "",
-    nomor: "",
-    catatan: "",
-    atlet: [{ id: "", posisi: "" }],
-    dokumentasi: [{ file: null, atletId: "" }],
-  });
 
   // State for API data
   const [allResults, setAllResults] = useState([]);
-  const [athletes, setAthletes] = useState([]);
   const [cabors, setCabors] = useState([]);
   const [nomors, setNomors] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [athletesForModal, setAthletesForModal] = useState([]);
 
   const resultsPerPage = 10;
 
@@ -48,22 +36,17 @@ const PorprovPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Ambil semua data awal
-        const [athletesRes, resultsRes, caborsRes, nomorsRes] =
-          await Promise.all([
-            axiosClient.get("publik/atlet"),
-            axiosClient.get("publik/hasil"),
-            axiosClient.get("publik/cabor"),
-            axiosClient.get("publik/nomor"),
-          ]);
+        const [resultsRes, caborsRes, nomorsRes] = await Promise.all([
+          axiosClient.get("publik/hasil"),
+          axiosClient.get("publik/cabor"),
+          axiosClient.get("publik/nomor"),
+        ]);
 
-        // Filter hanya data dengan event_name "PORPROV JATIM XI"
         const porprovResults = (resultsRes.data.data || []).filter(
           (result) => result.event_name === "PORPROV JATIM XI"
         );
 
         setAllResults(porprovResults);
-        setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
         setNomors(nomorsRes.data.data || []);
       } catch (err) {
@@ -76,31 +59,6 @@ const PorprovPage = () => {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const res = await axiosClient.get("api/user");
-      setUsers(res.data.data || []);
-    };
-    fetchUsers();
-  }, []);
-
-  // Ambil atlet sesuai cabor yang dipilih di form modal
-  useEffect(() => {
-    const fetchAthletesForModal = async () => {
-      if (!newResult.cabor) {
-        setAthletesForModal([]);
-        return;
-      }
-      try {
-        const res = await axiosClient.get(`api/atlet-cabor/cabor/${newResult.cabor}`);
-        setAthletesForModal(res.data.data || []);
-      } catch (err) {
-        setAthletesForModal([]);
-      }
-    };
-    fetchAthletesForModal();
-  }, [newResult.cabor]);
 
   const getMedal = (medali) => {
     return medali || "Partisipasi";
@@ -165,124 +123,10 @@ const PorprovPage = () => {
     setCurrentPage(1);
   };
 
-  const addAthlete = () => {
-    setNewResult((prev) => ({
-      ...prev,
-      atlet: [...prev.atlet, { id: "", posisi: "" }],
-    }));
-  };
-
-  const removeAthlete = (index) => {
-    if (newResult.atlet.length <= 1) return;
-    setNewResult((prev) => {
-      const updatedAtlet = [...prev.atlet];
-      updatedAtlet.splice(index, 1);
-      return { ...prev, atlet: updatedAtlet };
-    });
-  };
-
-  const handleAthleteChange = (index, field, value) => {
-    const updatedAtlet = [...newResult.atlet];
-    updatedAtlet[index][field] = value;
-    setNewResult((prev) => ({
-      ...prev,
-      atlet: updatedAtlet,
-    }));
-  };
-
-  const addDokumentasi = () => {
-    setNewResult((prev) => ({
-      ...prev,
-      dokumentasi: [...prev.dokumentasi, { file: null, atletId: "" }],
-    }));
-  };
-
-  const removeDokumentasi = (index) => {
-    if (newResult.dokumentasi.length <= 1) return;
-    setNewResult((prev) => {
-      const updatedDokumentasi = [...prev.dokumentasi];
-      updatedDokumentasi.splice(index, 1);
-      return { ...prev, dokumentasi: updatedDokumentasi };
-    });
-  };
-
-  const handleDokumentasiChange = (index, field, value) => {
-    const updatedDokumentasi = [...newResult.dokumentasi];
-    updatedDokumentasi[index][field] = value;
-    setNewResult((prev) => ({ ...prev, dokumentasi: updatedDokumentasi }));
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleDateString("id-ID");
-  };
-
-  const saveResults = async () => {
-    try {
-      if (!newResult.cabor || !newResult.nomor) {
-        setError("Pilih cabang olahraga dan nomor pertandingan");
-        return;
-      }
-
-      for (const athlete of newResult.atlet) {
-        if (!athlete.id || !athlete.posisi) {
-          setError("Data atlet belum lengkap");
-          return;
-        }
-      }
-
-      for (const doc of newResult.dokumentasi) {
-        if (!doc.file) {
-          setError("File dokumentasi wajib diisi");
-          return;
-        }
-      }
-
-      const promises = newResult.atlet.map((athlete) => {
-        const formData = new FormData();
-        formData.append("atlet_id", athlete.id);
-        formData.append("nomor_id", newResult.nomor);
-        formData.append("event_name", "PORPROV JATIM XI");
-        formData.append("medali", athlete.posisi);
-        formData.append("catatan", newResult.catatan);
-        formData.append("user_id", users.Id);
-
-
-
-        return axiosClient.post("api/hasil/add", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      });
-
-      await Promise.all(promises);
-
-      const resultsRes = await axiosClient.get("api/hasil");
-      // Filter lagi hanya data PORPROV JATIM XI
-      const porprovResults = (resultsRes.data.data || []).filter(
-        (result) => result.event_name === "PORPROV JATIM XI"
-      );
-      setAllResults(porprovResults);
-
-      setShowModal(false);
-      setNewResult({
-        eventName: "PORPROV JATIM XI",
-        cabor: "",
-        nomor: "",
-        catatan: "",
-        atlet: [{ id: "", posisi: "" }],
-        dokumentasi: [{ file: null, atletId: "" }],
-      });
-      setError(null);
-    } catch (err) {
-      console.error("Error saving results:", err);
-      setError(
-        "Gagal menyimpan hasil pertandingan: " +
-          (err.response?.data?.message || err.message)
-      );
-    }
   };
 
   if (loading) {
@@ -338,43 +182,79 @@ const PorprovPage = () => {
           </div>
         )}
 
-        <Filter
-          filterCabor={filterCabor}
-          handleFilterCaborChange={handleFilterCaborChange}
-          filterNomor={filterNomor}
-          handleFilterNomorChange={handleFilterNomorChange}
-          cabors={cabors}
-          nomors={nomors}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          setShowModal={setShowModal}
-        />
+        <div className="mb-8 flex flex-col gap-4">
+          <Filter
+              filterCabor={filterCabor}
+              handleFilterCaborChange={handleFilterCaborChange}
+              filterNomor={filterNomor}
+              handleFilterNomorChange={handleFilterNomorChange}
+              cabors={cabors}
+              nomors={nomors}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Cari atlet..."
+                className="w-full p-3 rounded-lg border"
+                style={{
+                  borderColor: "var(--color-gray-300)",
+                  backgroundColor: "var(--color-white)",
+                }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+
+            <Link
+              href="/hasil-pertandingan/porprov/form"
+              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+              style={{
+                backgroundColor: "var(--color-primary)",
+                color: "white",
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Tambah Hasil
+            </Link>
+          </div>
+        </div>
 
         <Table
           currentResults={currentResults}
           getMedal={getMedal}
           formatDate={formatDate}
           hideEventColumn={true}
-        />
-
-        <Modal
-          showModal={showModal}
-          setShowModal={setShowModal}
-          newResult={newResult}
-          setNewResult={setNewResult}
-          athletes={athletesForModal}
-          cabors={cabors}
-          nomors={nomors}
-          saveResults={saveResults}
-          error={error}
-          setError={setError}
-          handleAthleteChange={handleAthleteChange}
-          addAthlete={addAthlete}
-          removeAthlete={removeAthlete}
-          addDokumentasi={addDokumentasi}
-          removeDokumentasi={removeDokumentasi}
-          handleDokumentasiChange={handleDokumentasiChange}
-          fixedEventName={true}
         />
 
         {filteredResults.length === 0 && !loading && (

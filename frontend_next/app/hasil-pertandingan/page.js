@@ -1,3 +1,4 @@
+// app/hasil-pertandingan/page.js
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -6,26 +7,16 @@ import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import Filter from "../components/filter";
 import Table from "../components/table";
-import Modal from "../components/modal";
+import Link from "next/link";
 
 const ResultsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterCabor, setFilterCabor] = useState("");
   const [filterNomor, setFilterNomor] = useState("");
-  const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [newResult, setNewResult] = useState({
-    eventName: "",
-    cabor: "",
-    nomor: "",
-    catatan: "",
-    atlet: [{ id: "", posisi: "" }],
-    dokumentasi: [{ file: null, atletId: "" }],
-  });
 
   // State for API data
   const [allResults, setAllResults] = useState([]);
-  const [athletes, setAthletes] = useState([]);
   const [cabors, setCabors] = useState([]);
   const [nomors, setNomors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,16 +37,13 @@ const ResultsPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resultsRes, athletesRes, caborsRes, nomorsRes] =
-          await Promise.all([
-            axiosClient.get("api/hasil"),
-            axiosClient.get("api/atlet"),
-            axiosClient.get("api/cabor"),
-            axiosClient.get("api/nomor"),
-          ]);
+        const [resultsRes, caborsRes, nomorsRes] = await Promise.all([
+          axiosClient.get("api/hasil"),
+          axiosClient.get("api/cabor"),
+          axiosClient.get("api/nomor"),
+        ]);
 
         setAllResults(resultsRes.data.data || []);
-        setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
         setNomors(nomorsRes.data.data || []);
       } catch (err) {
@@ -76,6 +64,7 @@ const ResultsPage = () => {
   const filteredResults = useMemo(() => {
     const groupedResults = {};
     allResults.forEach((result) => {
+      // Skip PORPROV JATIM XI
       if (result.event_name === "PORPROV JATIM XI") return;
 
       const key = `${result.event_name}-${result.nomor?.cabor?.id}-${result.nomor?.id}`;
@@ -134,122 +123,10 @@ const ResultsPage = () => {
     setCurrentPage(1);
   };
 
-  const addAthlete = () => {
-    setNewResult((prev) => ({
-      ...prev,
-      atlet: [...prev.atlet, { id: "", posisi: "" }],
-    }));
-  };
-
-  const removeAthlete = (index) => {
-    if (newResult.atlet.length <= 1) return;
-    setNewResult((prev) => {
-      const updatedAtlet = [...prev.atlet];
-      updatedAtlet.splice(index, 1);
-      return { ...prev, atlet: updatedAtlet };
-    });
-  };
-
-  const handleAthleteChange = (index, field, value) => {
-    const updatedAtlet = [...newResult.atlet];
-    updatedAtlet[index][field] = value;
-    setNewResult((prev) => ({
-      ...prev,
-      atlet: updatedAtlet,
-    }));
-  };
-
-  const addDokumentasi = () => {
-    setNewResult((prev) => ({
-      ...prev,
-      dokumentasi: [...prev.dokumentasi, { file: null, atletId: "" }],
-    }));
-  };
-
-  const removeDokumentasi = (index) => {
-    if (newResult.dokumentasi.length <= 1) return;
-    setNewResult((prev) => {
-      const updatedDokumentasi = [...prev.dokumentasi];
-      updatedDokumentasi.splice(index, 1);
-      return { ...prev, dokumentasi: updatedDokumentasi };
-    });
-  };
-
-  const handleDokumentasiChange = (index, field, value) => {
-    const updatedDokumentasi = [...newResult.dokumentasi];
-    updatedDokumentasi[index][field] = value;
-    setNewResult((prev) => ({ ...prev, dokumentasi: updatedDokumentasi }));
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleDateString("id-ID");
-  };
-
-  const saveResults = async () => {
-    try {
-      if (!newResult.cabor || !newResult.nomor) {
-        setError("Pilih cabang olahraga dan nomor pertandingan");
-        return;
-      }
-
-      for (const athlete of newResult.atlet) {
-        if (!athlete.id || !athlete.posisi) {
-          setError("Data atlet belum lengkap");
-          return;
-        }
-      }
-
-      for (const doc of newResult.dokumentasi) {
-        if (!doc.file) {
-          setError("File dokumentasi wajib diisi");
-          return;
-        }
-      }
-
-      const promises = newResult.atlet.map((athlete) => {
-        const formData = new FormData();
-        formData.append("atlet_id", athlete.id);
-        formData.append("nomor_id", newResult.nomor);
-        formData.append("event_name", newResult.eventName);
-        formData.append("medali", athlete.posisi);
-        formData.append("catatan", newResult.catatan);
-
-        newResult.dokumentasi.forEach((doc, idx) => {
-          formData.append(`dokumentasi_file_${idx}`, doc.file);
-          formData.append(`dokumentasi_atlet_id_${idx}`, doc.atletId);
-        });
-
-        return axios.post("http://localhost:8080/api/hasil/add", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      });
-
-      await Promise.all(promises);
-
-      const resultsRes = await axios.get("http://localhost:8080/api/hasil");
-      setAllResults(resultsRes.data.data || []);
-
-      setShowModal(false);
-      setNewResult({
-        eventName: "",
-        cabor: "",
-        nomor: "",
-        catatan: "",
-        atlet: [{ id: "", posisi: "" }],
-        dokumentasi: [{ file: null, atletId: "" }],
-      });
-      setError(null);
-    } catch (err) {
-      console.error("Error saving results:", err);
-      setError(
-        "Gagal menyimpan hasil pertandingan: " +
-          (err.response?.data?.message || err.message)
-      );
-    }
   };
 
   if (loading) {
@@ -305,41 +182,79 @@ const ResultsPage = () => {
           </div>
         )}
 
-        <Filter
-          filterCabor={filterCabor}
-          handleFilterCaborChange={handleFilterCaborChange}
-          filterNomor={filterNomor}
-          handleFilterNomorChange={handleFilterNomorChange}
-          cabors={cabors}
-          nomors={nomors}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          setShowModal={setShowModal}
-        />
+        <div className="mb-8 flex flex-col gap-4">
+          <Filter
+            filterCabor={filterCabor}
+            handleFilterCaborChange={handleFilterCaborChange}
+            filterNomor={filterNomor}
+            handleFilterNomorChange={handleFilterNomorChange}
+            cabors={cabors}
+            nomors={nomors}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Cari hasil pertandingan..."
+                className="w-full p-3 rounded-lg border"
+                style={{
+                  borderColor: "var(--color-gray-300)",
+                  backgroundColor: "var(--color-white)",
+                }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+
+            <Link
+              href="/hasil-pertandingan/form"
+              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+              style={{
+                backgroundColor: "var(--color-primary)",
+                color: "white",
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Tambah Hasil
+            </Link>
+          </div>
+        </div>
 
         <Table
           currentResults={currentResults}
           getMedal={getMedal}
           formatDate={formatDate}
-        />
-
-        <Modal
-          showModal={showModal}
-          setShowModal={setShowModal}
-          newResult={newResult}
-          setNewResult={setNewResult}
-          athletes={athletes}
-          cabors={cabors}
-          nomors={nomors}
-          saveResults={saveResults}
-          error={error}
-          setError={setError}
-          handleAthleteChange={handleAthleteChange}
-          addAthlete={addAthlete}
-          removeAthlete={removeAthlete}
-          addDokumentasi={addDokumentasi}
-          removeDokumentasi={removeDokumentasi}
-          handleDokumentasiChange={handleDokumentasiChange}
+          hideEventColumn={false}
         />
 
         {filteredResults.length === 0 && !loading && (
