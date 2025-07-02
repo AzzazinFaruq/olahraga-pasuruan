@@ -249,7 +249,7 @@ const AddResultPage = () => {
         },
       });
       
-      const destination = formData.eventName === "PORPROV JATIM XI" ? "/porprov" : "/hasil-pertandingan";
+      const destination = formData.eventName === "PORPROV JATIM XI" ? "/hasil-pertandingan/porprov" : "/hasil-pertandingan";
       setTimeout(() => {
         router.push(destination);
       }, 1500);

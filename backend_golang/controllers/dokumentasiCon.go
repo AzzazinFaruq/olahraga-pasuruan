@@ -146,3 +146,12 @@ func DeleteDokumentasi(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Dokumentasi berhasil dihapus"})
 }
+func GetDokumentasiByHasilPertandinganID(c *gin.Context) {
+	id := c.Param("id")
+	var dokumentasi []models.Dokumentasi
+	if err := setup.DB.Where("hasil_pertandingan_id = ?", id).Find(&dokumentasi).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": dokumentasi})
+}

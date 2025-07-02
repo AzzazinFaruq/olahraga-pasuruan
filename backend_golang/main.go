@@ -97,6 +97,7 @@ func main() {
 		protected.POST("/dokumentasi", controllers.AddDokumentasi)
 		protected.PUT("/dokumentasi", controllers.UpdateDokumentasi)
 		protected.DELETE("/dokumentasi", controllers.DeleteDokumentasi)
+		protected.GET("/dokumentasi/hasil/:id", controllers.GetDokumentasiByHasilPertandinganID)
 	}
 	router.Static("/public", "./public")
 	port := os.Getenv("PORT")

@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import axiosClient from "../../auths/auth-context/axiosClient";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
+import { getImageURL } from "../../utils/config";
 
 const ResultDetail = () => {
   const { id: resultId } = useParams();
@@ -13,6 +14,7 @@ const ResultDetail = () => {
 
   const [result, setResult] = useState(null);
   const [relatedAthletes, setRelatedAthletes] = useState([]);
+  const [dokumentasiItems, setDokumentasiItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -80,6 +82,14 @@ const ResultDetail = () => {
             );
 
             setRelatedAthletes(sortedAthletes);
+          }
+
+          // Get dokumentasi berdasarkan hasil_pertandingan_id
+          if (mainResult.id) {
+            const dokumentasiRes = await axiosClient.get(
+              `api/dokumentasi/hasil/${mainResult.id}`
+            );
+            setDokumentasiItems(dokumentasiRes.data.data || []);
           }
         }
       } catch (err) {
@@ -177,22 +187,6 @@ const ResultDetail = () => {
         <Footer />
       </div>
     );
-  }
-
-  const galleryItems = [];
-  const baseLength = 6;
-
-  for (let i = 0; i < 12; i++) {
-    const baseIndex = i % baseLength;
-    let athleteName = `Atlet Hapkido ${baseIndex + 1}`;
-    if (relatedAthletes.length > 0) {
-      const athleteIndex = baseIndex % relatedAthletes.length;
-      athleteName = relatedAthletes[athleteIndex]?.atlet?.nama || athleteName;
-    }
-    galleryItems.push({
-      id: i + 1,
-      name: athleteName,
-    });
   }
 
   return (
@@ -341,17 +335,22 @@ const ResultDetail = () => {
               >
                 <div className="relative overflow-hidden h-64 rounded-xl">
                   <div className="absolute flex animate-scroll whitespace-nowrap">
-                    {galleryItems.map((img) => (
-                      <div
-                        key={img.id}
-                        className="inline-block mx-4 text-center"
-                      >
-                        <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
-                        <p className="mt-2 font-medium truncate w-96 mx-auto">
-                          {img.name}
-                        </p>
-                      </div>
-                    ))}
+                    {dokumentasiItems.length === 0 ? (
+                      <p className="text-gray-500">Belum ada dokumentasi</p>
+                    ) : (
+                      dokumentasiItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="inline-block mx-4 text-center"
+                        >
+                          <img
+                            src={getImageURL(item.dokumentasi)}
+                            alt="Dokumentasi"
+                            className="rounded-xl w-96 h-56 object-cover shadow-md"
+                          />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
