@@ -181,36 +181,23 @@ const AddResultPage = () => {
       }
 
       // Kirim data ke API
-      const promises = formData.atlet.map((athlete) => {
-        const formData = new FormData();
-        formData.append("atlet_id", athlete.id);
-        formData.append("nomor_id", formData.nomor);
-        formData.append("event_name", formData.eventName);
-        formData.append("medali", athlete.posisi);
-        formData.append("catatan", formData.catatan);
-        formData.append("user_id", users.Id);
+      const hasilFormData = new FormData();
+      hasilFormData.append("event_name", formData.eventName);
+      hasilFormData.append("cabor_id", formData.cabor);
+      hasilFormData.append("nomor_id", formData.nomor);
+      hasilFormData.append("catatan", formData.catatan);
+      hasilFormData.append("user_id", users.Id);
 
-        return axiosClient.post("api/hasil/add", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      });
-
-      await Promise.all(promises);
+      const hasilRes = await axiosClient.post("api/hasil/add", hasilFormData);
+      const hasilId = hasilRes.data.data.id;
 
       // Kirim dokumentasi
       const docPromises = formData.dokumentasi.map((doc) => {
         const docFormData = new FormData();
-        docFormData.append("atlet_id", doc.atletId);
-        docFormData.append("file", doc.file);
-        docFormData.append("event_name", formData.eventName);
+        docFormData.append("dokumentasi", doc.file);
+        docFormData.append("hasil_pertandingan_id", hasilId);
 
-        return axiosClient.post("api/dokumentasi/add", docFormData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        return axiosClient.post("api/dokumentasi", docFormData);
       });
 
       await Promise.all(docPromises);
