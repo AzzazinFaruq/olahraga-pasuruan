@@ -6,6 +6,7 @@ import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
 import axiosClient from "@/app/auths/auth-context/axiosClient";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 const AddResultPage = () => {
   const router = useRouter();
@@ -15,7 +16,7 @@ const AddResultPage = () => {
     nomor: "",
     catatan: "",
     atlet: [{ id: "", posisi: "" }],
-    dokumentasi: [{ file: null, atletId: "" }],
+    dokumentasi: [{ file: null }],
   });
 
   const [athletes, setAthletes] = useState([]);
@@ -23,14 +24,15 @@ const AddResultPage = () => {
   const [nomors, setNomors] = useState([]);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
+  const [idHasil, setIdHasil] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [athletesForModal, setAthletesForModal] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Fetch data saat komponen dimuat
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Ambil semua data awal
         const [athletesRes, caborsRes, nomorsRes, usersRes] = await Promise.all(
           [
             axiosClient.get("publik/atlet"),
@@ -51,6 +53,19 @@ const AddResultPage = () => {
     };
 
     fetchData();
+  }, []);
+
+  // Ambil user aktif
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await axiosClient.get("api/user");
+        setCurrentUser(res.data.data);
+      } catch (err) {
+        console.error("Gagal mengambil user", err);
+      }
+    };
+    fetchCurrentUser();
   }, []);
 
   // Ambil atlet sesuai cabor yang dipilih
@@ -105,7 +120,6 @@ const AddResultPage = () => {
     }));
   };
 
-  // Hapus baris atlet
   const removeAthlete = (index) => {
     if (formData.atlet.length <= 1) return;
     setFormData((prev) => {
@@ -115,22 +129,14 @@ const AddResultPage = () => {
     });
   };
 
-  // Handler untuk perubahan dokumentasi
-  const handleDokumentasiChange = (index, field, value) => {
-    const updatedDokumentasi = [...formData.dokumentasi];
-    updatedDokumentasi[index][field] = value;
-    setFormData((prev) => ({ ...prev, dokumentasi: updatedDokumentasi }));
-  };
-
   // Tambah baris dokumentasi baru
   const addDokumentasi = () => {
     setFormData((prev) => ({
       ...prev,
-      dokumentasi: [...prev.dokumentasi, { file: null, atletId: "" }],
+      dokumentasi: [...prev.dokumentasi, { file: null }],
     }));
   };
 
-  // Hapus baris dokumentasi
   const removeDokumentasi = (index) => {
     if (formData.dokumentasi.length <= 1) return;
     setFormData((prev) => {
@@ -144,7 +150,9 @@ const AddResultPage = () => {
   const handleFileChange = (index, e) => {
     const file = e.target.files[0];
     if (file) {
-      handleDokumentasiChange(index, "file", file);
+      const updatedDokumentasi = [...formData.dokumentasi];
+      updatedDokumentasi[index].file = file;
+      setFormData((prev) => ({ ...prev, dokumentasi: updatedDokumentasi }));
     }
   };
 
@@ -168,43 +176,78 @@ const AddResultPage = () => {
         }
       }
 
-      // Kirim data ke API
-      const promises = formData.atlet.map((athlete) => {
-        const formData = new FormData();
-        formData.append("atlet_id", athlete.id);
-        formData.append("nomor_id", formData.nomor);
-        formData.append("event_name", formData.eventName);
-        formData.append("medali", athlete.posisi);
-        formData.append("catatan", formData.catatan);
-        formData.append("user_id", users.Id);
+      const athleteIds = formData.atlet.map((a) => a.id);
+      if (new Set(athleteIds).size !== athleteIds.length) {
+        setError("Satu atlet hanya boleh diinput sekali!");
+        setIsSubmitting(false);
+        return;
+      }
 
-        return axiosClient.post("api/hasil/add", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      if (!users.Id) {
+        setError("Data user belum dimuat");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Kirim data hasil pertandingan
+      const hasilIds = [];
+      for (const athlete of formData.atlet) {
+        const form = new FormData();
+        form.append("atlet_id", athlete.id);
+        form.append("nomor_id", formData.nomor);
+        form.append("event_name", formData.eventName);
+        form.append("medali", athlete.posisi);
+        form.append("catatan", formData.catatan);
+        form.append("user_id", users.Id);
+
+        const res = await axiosClient.post("api/hasil/add", form, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
+
+        hasilIds.push(res.data.data.id);
+      }
+
+      // Kirim dokumentasi untuk semua hasil yang dibuat
+      const dokumentasiPromises = [];
+      for (const doc of formData.dokumentasi) {
+        if (doc.file) {
+          for (const hasilId of hasilIds) {
+            const docForm = new FormData();
+            docForm.append("hasil_pertandingan_id", hasilId);
+            docForm.append("dokumentasi", doc.file);
+
+            dokumentasiPromises.push(
+              axiosClient.post("api/dokumentasi", docForm, {
+                headers: { "Content-Type": "multipart/form-data" },
+              })
+            );
+          }
+        }
+      }
+
+      if (dokumentasiPromises.length > 0) {
+        await Promise.all(dokumentasiPromises);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Sukses!",
+        text: "Hasil berhasil ditambahkan!",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: {
+          popup: "custom-swal-popup",
+          icon: "custom-swal-icon",
+          title: "custom-swal-title",
+        },
       });
 
-      await Promise.all(promises);
-
-      // Kirim dokumentasi
-      const docPromises = formData.dokumentasi.map((doc) => {
-        const docFormData = new FormData();
-        docFormData.append("atlet_id", doc.atletId);
-        docFormData.append("file", doc.file);
-        docFormData.append("event_name", doc.eventName);
-
-        return axiosClient.post("api/dokumentasi/add", docFormData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      });
-
-      await Promise.all(docPromises);
-
-      alert("Data hasil pertandingan berhasil ditambahkan!");
-      router.push("/porprov");
+      setTimeout(() => {
+        router.push("/hasil-pertandingan");
+      }, 1500);
     } catch (err) {
       console.error("Error saving results:", err);
       setError(
@@ -478,43 +521,9 @@ const AddResultPage = () => {
                           type="file"
                           onChange={(e) => handleFileChange(index, e)}
                           className="w-full p-2 rounded-lg border border-gray-300"
-                          // required
                         />
                       </div>
-                      <div className="flex-1 relative">
-                        <select
-                          value={doc.atletId}
-                          onChange={(e) =>
-                            handleDokumentasiChange(
-                              index,
-                              "atletId",
-                              e.target.value
-                            )
-                          }
-                          className="w-full p-2 rounded-lg border appearance-none border-gray-300"
-                          // required
-                        >
-                          <option value="">Pilih Atlet</option>
-                          {athletes.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.nama}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                          <svg
-                            className="w-4 h-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      </div>
+
                       {formData.dokumentasi.length > 1 && (
                         <button
                           type="button"
@@ -573,7 +582,7 @@ const AddResultPage = () => {
                     style={{ backgroundColor: "var(--color-primary)" }}
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Menyimpan..." : "Simpan Sementara"}
+                    {isSubmitting ? "Menyimpan..." : "Simpan"}
                   </button>
                 </div>
               </div>

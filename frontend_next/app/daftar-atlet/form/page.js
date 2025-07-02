@@ -6,6 +6,7 @@ import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import axiosClient from "../../auths/auth-context/axiosClient";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 const AddAthletePage = () => {
   const router = useRouter();
@@ -91,7 +92,6 @@ const AddAthletePage = () => {
     setError("");
 
     try {
-      // Step 1: Create athlete
       const athleteForm = new FormData();
       athleteForm.append("nik", formData.nik);
       athleteForm.append("nama", formData.nama);
@@ -143,8 +143,25 @@ const AddAthletePage = () => {
         }
       }
 
-      alert("Data atlet berhasil ditambahkan!");
-      router.push("/daftar-atlet");
+      Swal.fire({
+        icon: "success",
+        title: "Sukses!",
+        text: "Atlet berhasil ditambahkan!",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        customClass: {
+          popup: "custom-swal-popup",
+          icon: "custom-swal-icon",
+          title: "custom-swal-title",
+        },
+      });
+
+      setTimeout(() => {
+        router.push("/daftar-atlet");
+      }, 1500);
     } catch (err) {
       console.error("Error:", err);
       setError(
