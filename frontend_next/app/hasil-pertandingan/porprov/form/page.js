@@ -23,6 +23,7 @@ const AddResultPage = () => {
   const [nomors, setNomors] = useState([]);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
+  const [idHasil, setIdHasil] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [athletesForModal, setAthletesForModal] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -190,12 +191,13 @@ const AddResultPage = () => {
         return;
       }
 
-      if (!currentUser?.id) {
+      if (!users.Id) {
         setError("Data user belum dimuat");
         setIsSubmitting(false);
         return;
       }
 
+      var hasil
       // Kirim data ke API
       const promises = formData.atlet.map((athlete) => {
         const form = new FormData();
@@ -204,31 +206,36 @@ const AddResultPage = () => {
         form.append("event_name", formData.eventName);
         form.append("medali", athlete.posisi);
         form.append("catatan", formData.catatan);
-        form.append("user_id", currentUser.id);
+        form.append("user_id", users.Id);
 
         return axiosClient.post("api/hasil/add", form, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
+        }).then((res)=>{
+          console.log(res.data.data.id)
+          hasil = res.data.data.id
         });
+
       });
 
       await Promise.all(promises);
 
       // Kirim dokumentasi
-      const dokumentasiPromises = formData.dokumentasi
-      .filter(doc => doc.file && doc.atletId)
-      .map((doc) => {
-        const docFormData = new FormData();
-        docFormData.append("atlet_id", doc.atletId);
-        docFormData.append("file", doc.file);
-        docFormData.append("event_name", formData.eventName);
-
-        return axiosClient.post("api/dokumentasi/add", docFormData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+      const docFormData = new FormData();
+      formData.dokumentasi.forEach((doc) => {
+        if (doc.file) {
+          docFormData.append("hasil_pertandingan_id", hasil);
+          docFormData.append("dokumentasi", doc.file); // kirim multiple dengan nama sama
+        }
       });
 
+      await axiosClient.post("api/dokumentasi", docFormData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+          
+     
       if (dokumentasiPromises.length > 0) {
         await Promise.all(dokumentasiPromises);
       }
