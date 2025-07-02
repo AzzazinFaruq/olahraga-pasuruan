@@ -190,7 +190,6 @@ const AddResultPage = () => {
       }
 
       // Kirim data hasil pertandingan
-      const hasilIds = [];
       for (const athlete of formData.atlet) {
         const form = new FormData();
         form.append("atlet_id", athlete.id);
@@ -200,18 +199,19 @@ const AddResultPage = () => {
         form.append("catatan", formData.catatan);
         form.append("user_id", users.Id);
 
-        const res = await axiosClient.post("api/hasil/add", form, {
-          headers: { "Content-Type": "multipart/form-data" },
+        await axiosClient.post("api/hasil/add", form)
+        .then((res)=>{
+          setIdHasil(res.data.data.id)
+          console.log(idHasil)
         });
 
-        hasilIds.push(res.data.data.id);
       }
 
       // Kirim dokumentasi untuk semua hasil yang dibuat
       const dokumentasiPromises = [];
       for (const doc of formData.dokumentasi) {
         if (doc.file) {
-          for (const hasilId of hasilIds) {
+          for (const hasilId of idHasil) {
             const docForm = new FormData();
             docForm.append("hasil_pertandingan_id", hasilId);
             docForm.append("dokumentasi", doc.file);
