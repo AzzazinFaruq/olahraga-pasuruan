@@ -6,6 +6,7 @@ import Footer from "../../components/footer";
 import axiosClient from "../../auths/auth-context/axiosClient";
 import { useParams, useRouter } from "next/navigation";
 import { getImageURL } from "../../utils/config";
+import Swal from "sweetalert2";
 
 const formatTanggal = (dateString) => {
   const options = { day: "numeric", month: "long", year: "numeric" };
@@ -20,15 +21,63 @@ const AthleteDetail = () => {
 
   useEffect(() => {
     if (!id) return;
-    axiosClient
-      .get(`publik/atlet-cabor/${id}`)
-      .then((res) => {
-        setAthlete(res.data.data);
-      })
-      .catch((err) => {
-        console.error("Gagal ambil data:", err);
-      });
+
+    const fetchData = async () => {
+      try {
+        // ✅ Endpoint untuk detail atlet
+        const atletRes = await axiosClient.get(`publik/atlet/${id}`);
+
+        // ✅ Endpoint untuk cabor atlet (protected, harus pakai token)
+        const caborRes = await axiosClient.get(`api/atlet-cabor/atlet/${id}`);
+
+        setAthlete({
+          atlet: atletRes.data.data,
+          cabor: caborRes.data.data[0] || null, // fallback kalau tidak ada cabor
+        });
+      } catch (err) {
+        console.error("Gagal ambil data atlet/cabor:", err);
+      }
+    };
+
+    fetchData();
   }, [id]);
+
+  const handleDelete = async () => {
+    const result = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data atlet akan dihapus permanen",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        // Hapus relasi atlet-cabor jika ada
+        if (athlete.cabor && athlete.cabor.id) {
+          await axiosClient.delete(
+            `api/atlet-cabor/remove/${athlete.atlet.id}/${athlete.cabor.id}`
+          );
+        }
+
+        // Hapus data atlet
+        await axiosClient.delete(`api/atlet/delete/${athlete.atlet.id}`);
+
+        Swal.fire("Terhapus!", "Data atlet telah dihapus.", "success");
+        router.back();
+      } catch (error) {
+        Swal.fire("Gagal!", "Gagal menghapus data atlet.", "error");
+        console.error("Error deleting athlete:", error);
+      }
+    }
+  };
+
+  const handleEdit = () => {
+    router.push(`/daftar-atlet/edit/${id}`);
+  };
 
   if (!athlete) {
     return (
@@ -52,13 +101,31 @@ const AthleteDetail = () => {
 
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => router.back()}
-            className="inline-block mb-6 cursor-pointer"
-            style={{ color: "var(--color-primary)" }}
-          >
-            &larr; Kembali
-          </button>
+          <div className="flex justify-between items-center mb-6">
+            <button
+              onClick={() => router.back()}
+              className="inline-block cursor-pointer"
+              style={{ color: "var(--color-primary)" }}
+            >
+              &larr; Kembali
+            </button>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 border rounded-md transition text-[color:var(--color-primary)] border-[color:var(--color-primary)] hover:bg-red-50"
+              >
+                Hapus
+              </button>
+
+              <button
+                onClick={handleEdit}
+                className="px-4 py-2 rounded-md transition text-white bg-[color:var(--color-primary)] hover:opacity-90"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
 
           <div
             className="bg-white rounded-2xl shadow-xl p-8"
@@ -71,6 +138,9 @@ const AthleteDetail = () => {
                     src={getImageURL(athlete.atlet.foto_3x4)}
                     alt={athlete.atlet.nama}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "/placeholder-avatar.png";
+                    }}
                   />
                 </div>
               </div>
@@ -94,11 +164,20 @@ const AthleteDetail = () => {
                       athlete.atlet.tanggal_lahir
                     )}`}
                   />
-                  <Info label="Jenis Kelamin" value={athlete.atlet.jenis_kelamin} />
+                  <Info
+                    label="Jenis Kelamin"
+                    value={athlete.atlet.jenis_kelamin}
+                  />
                   <Info label="Alamat" value={athlete.atlet.alamat} />
                   <Info label="Sekolah" value={athlete.atlet.nama_sekolah} />
-                  <Info label="Nama Orang Tua/Wali" value={athlete.atlet.nama_ortu} />
-                  <Info label="Cabang Olahraga" value={athlete.cabor.nama_cabor} />
+                  <Info
+                    label="Nama Orang Tua/Wali"
+                    value={athlete.atlet.nama_ortu}
+                  />
+                  <Info
+                    label="Cabang Olahraga"
+                    value={athlete.cabor?.nama_cabor || "-"}
+                  />
                 </div>
               </div>
             </div>

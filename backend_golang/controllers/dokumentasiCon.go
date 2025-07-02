@@ -109,8 +109,8 @@ func UpdateDokumentasi(c *gin.Context) {
 		}
 		timestamp := time.Now().Unix()
 		filename := fmt.Sprintf("%d_%s", timestamp, file.Filename)
-		uploadPath := "public/uploads/dokumentasi_atlet/" + filename
-		if err := os.MkdirAll("public/uploads/dokumentasi_atlet", 0755); err != nil {
+		uploadPath := "public/uploads/dokumentasi/" + filename
+		if err := os.MkdirAll("public/uploads/dokumentasi", 0755); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat direktori upload"})
 			return
 		}

@@ -7,6 +7,7 @@ import axiosClient from "../../auths/auth-context/axiosClient";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import { getImageURL } from "../../utils/config";
+import Swal from "sweetalert2";
 
 const ResultDetail = () => {
   const { id: resultId } = useParams();
@@ -84,7 +85,6 @@ const ResultDetail = () => {
             setRelatedAthletes(sortedAthletes);
           }
 
-          // Get dokumentasi berdasarkan hasil_pertandingan_id
           if (mainResult.id) {
             const dokumentasiRes = await axiosClient.get(
               `api/dokumentasi/hasil/${mainResult.id}`
@@ -135,6 +135,36 @@ const ResultDetail = () => {
     }
   };
 
+  const id = result?.id;
+
+  const handleDelete = async () => {
+    const resultConfirm = await Swal.fire({
+      title: "Apakah Anda yakin?",
+      text: "Data atlet akan dihapus permanen",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Hapus",
+      cancelButtonText: "Batal",
+    });
+
+    if (resultConfirm.isConfirmed) {
+      try {
+        await axiosClient.delete(`api/hasil/delete/${id}`);
+        Swal.fire("Terhapus!", "Data hasil telah dihapus.", "success");
+        router.back();
+      } catch (error) {
+        Swal.fire("Gagal!", "Gagal menghapus data atlet.", "error");
+        console.error("Error deleting athlete:", error);
+      }
+    }
+  };
+
+  const handleEdit = () => {
+    router.push(`/hasil-pertandingan/edit/${id}`);
+  };
+
   if (loading) {
     return (
       <div
@@ -174,12 +204,12 @@ const ResultDetail = () => {
           <div className="max-w-4xl mx-auto">
             <button
               onClick={() => router.back()}
-              className="inline-block mb-6 cursor-pointer"
+              className="inline-block cursor-pointer"
               style={{ color: "var(--color-primary)" }}
             >
               &larr; Kembali
             </button>
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4">
               {error}
             </div>
           </div>
@@ -200,16 +230,33 @@ const ResultDetail = () => {
       }}
     >
       <Navbar />
-
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => router.back()}
-            className="inline-block mb-6 cursor-pointer"
-            style={{ color: "var(--color-primary)" }}
-          >
-            &larr; Kembali
-          </button>
+          <div className="flex justify-between items-center mb-6">
+            <button
+              onClick={() => router.back()}
+              className="inline-block cursor-pointer"
+              style={{ color: "var(--color-primary)" }}
+            >
+              &larr; Kembali
+            </button>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 border rounded-md transition text-[color:var(--color-primary)] border-[color:var(--color-primary)] hover:bg-red-50"
+              >
+                Hapus
+              </button>
+
+              <button
+                onClick={handleEdit}
+                className="px-4 py-2 rounded-md transition text-white bg-[color:var(--color-primary)] hover:opacity-90"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
 
           <div
             className="bg-white rounded-2xl shadow-xl p-8 mb-8"
@@ -299,15 +346,7 @@ const ResultDetail = () => {
 
             {result?.catatan && (
               <div className="mb-8">
-                <h3
-                  className="font-bold mb-4"
-                  style={{
-                    fontSize: "var(--font-size-medium)",
-                    color: "var(--color-gray-800)",
-                  }}
-                >
-                  Catatan
-                </h3>
+                <h3 className="font-bold mb-4 text-gray-800">Catatan</h3>
                 <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
                   <p style={{ color: "var(--color-gray-700)" }}>
                     {result.catatan}
@@ -317,48 +356,29 @@ const ResultDetail = () => {
             )}
 
             <div>
-              <h3
-                className="font-bold mb-4"
-                style={{
-                  fontSize: "var(--font-size-medium)",
-                  color: "var(--color-gray-800)",
-                }}
-              >
-                Dokumentasi
-              </h3>
-              <div
-                className="relative w-full overflow-hidden rounded-2xl p-4 mb-4"
-                style={{
-                  backgroundColor: "var(--color-gray-100)",
-                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
-                }}
-              >
-                <div className="relative overflow-hidden h-64 rounded-xl">
-                  <div className="absolute flex animate-scroll whitespace-nowrap">
-                    {dokumentasiItems.length === 0 ? (
-                      <p className="text-gray-500">Belum ada dokumentasi</p>
-                    ) : (
-                      dokumentasiItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="inline-block mx-4 text-center"
-                        >
-                          <img
-                            src={getImageURL(item.dokumentasi)}
-                            alt="Dokumentasi"
-                            className="rounded-xl w-96 h-56 object-cover shadow-md"
-                          />
-                        </div>
-                      ))
-                    )}
-                  </div>
+              <h3 className="font-bold mb-4 text-gray-800">Dokumentasi</h3>
+              {dokumentasiItems.length === 0 ? (
+                <p className="text-gray-500 py-4">Belum ada dokumentasi</p>
+              ) : (
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
+                  {dokumentasiItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="mb-4 relative rounded-xl overflow-hidden cursor-pointer break-inside-avoid"
+                    >
+                      <img
+                        src={getImageURL(item.dokumentasi)}
+                        alt="Dokumentasi"
+                        className="w-full rounded-xl shadow-md"
+                      />
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

@@ -95,8 +95,8 @@ func main() {
 		protected.GET("/dokumentasi/:id", controllers.GetDokumentasiById)
 		protected.GET("/dokumentasi/latest", controllers.GetLatestDokumentasi)
 		protected.POST("/dokumentasi", controllers.AddDokumentasi)
-		protected.PUT("/dokumentasi", controllers.UpdateDokumentasi)
-		protected.DELETE("/dokumentasi", controllers.DeleteDokumentasi)
+		protected.PUT("/dokumentasi/:id", controllers.UpdateDokumentasi)
+		protected.DELETE("/dokumentasi/:id", controllers.DeleteDokumentasi)
 		protected.GET("/dokumentasi/hasil/:id", controllers.GetDokumentasiByHasilPertandinganID)
 	}
 	router.Static("/public", "./public")
