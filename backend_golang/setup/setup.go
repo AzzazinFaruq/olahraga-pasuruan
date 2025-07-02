@@ -50,6 +50,7 @@ func ConnectDatabase() {
 		&models.AtletCabor{},
 		&models.HasilPertandingan{},
 		&models.Dokumentasi{},
+		&models.News{},
 	)
 	if err != nil {
 		log.Fatalf("Auto migration failed: %v", err)

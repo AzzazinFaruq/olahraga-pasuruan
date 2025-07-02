@@ -42,6 +42,8 @@ func main() {
 		publik.GET("/dokumentasi/latest", controllers.GetLatestDokumentasi)
 		publik.GET("/atlet-cabor/:id", controllers.GetAtletCaborById)
 		publik.GET("/hasil/:id", controllers.GetHasilById)
+		publik.GET("/news", controllers.GetAllNews)
+		publik.GET("/news/:id", controllers.GetNewsById)
 	}
 
 	protected := router.Group("/api")
@@ -98,6 +100,11 @@ func main() {
 		protected.PUT("/dokumentasi", controllers.UpdateDokumentasi)
 		protected.DELETE("/dokumentasi", controllers.DeleteDokumentasi)
 		protected.GET("/dokumentasi/hasil/:id", controllers.GetDokumentasiByHasilPertandinganID)
+		// News
+
+		protected.POST("/news/add", controllers.CreateNews)
+		protected.PUT("/news/update/:id", controllers.UpdateNews)
+		protected.DELETE("/news/delete/:id", controllers.DeleteNews)
 	}
 	router.Static("/public", "./public")
 	port := os.Getenv("PORT")
