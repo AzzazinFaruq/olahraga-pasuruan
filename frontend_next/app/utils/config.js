@@ -1,0 +1,6 @@
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+export const getImageURL = (imagePath) => {
+  if (!imagePath) return null;
+  return `${API_BASE_URL}/${imagePath}`;
+};

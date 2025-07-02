@@ -157,21 +157,22 @@ const AddResultPage = () => {
   };
 
   // Submit form
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
 
     try {
-      // Validasi
       if (!formData.cabor || !formData.nomor) {
         setError("Pilih cabang olahraga dan nomor pertandingan");
+        setIsSubmitting(false);
         return;
       }
 
       for (const athlete of formData.atlet) {
         if (!athlete.id || !athlete.posisi) {
           setError("Data atlet belum lengkap");
+          setIsSubmitting(false);
           return;
         }
       }
@@ -183,13 +184,15 @@ const AddResultPage = () => {
         return;
       }
 
-      if (!users.Id) {
-        setError("Data user belum dimuat");
+      if (!currentUser || (!currentUser.Id && !currentUser.id)) {
+        setError("Gagal memuat data user yang aktif. Silakan coba login ulang.");
         setIsSubmitting(false);
         return;
       }
 
-      // Kirim data hasil pertandingan
+      const userId = currentUser.Id || currentUser.id;
+
+      const hasilIds = [];
       for (const athlete of formData.atlet) {
         const form = new FormData();
         form.append("atlet_id", athlete.id);
@@ -197,36 +200,37 @@ const AddResultPage = () => {
         form.append("event_name", formData.eventName);
         form.append("medali", athlete.posisi);
         form.append("catatan", formData.catatan);
-        form.append("user_id", users.Id);
+        form.append("user_id", userId);
 
-        await axiosClient.post("api/hasil/add", form)
-        .then((res)=>{
-          setIdHasil(res.data.data.id)
-          console.log(idHasil)
+        const res = await axiosClient.post("api/hasil/add", form, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
 
-      }
-
-      // Kirim dokumentasi untuk semua hasil yang dibuat
-      const dokumentasiPromises = [];
-      for (const doc of formData.dokumentasi) {
-        if (doc.file) {
-          for (const hasilId of idHasil) {
-            const docForm = new FormData();
-            docForm.append("hasil_pertandingan_id", hasilId);
-            docForm.append("dokumentasi", doc.file);
-
-            dokumentasiPromises.push(
-              axiosClient.post("api/dokumentasi", docForm, {
-                headers: { "Content-Type": "multipart/form-data" },
-              })
-            );
-          }
+        if (res.data && res.data.data && res.data.data.id) {
+          hasilIds.push(res.data.data.id);
         }
       }
 
-      if (dokumentasiPromises.length > 0) {
-        await Promise.all(dokumentasiPromises);
+      if (hasilIds.length > 0) {
+        const dokumentasiPromises = [];
+        for (const doc of formData.dokumentasi) {
+          if (doc.file) {
+            for (const hasilId of hasilIds) {
+              const docForm = new FormData();
+              docForm.append("hasil_pertandingan_id", hasilId);
+              docForm.append("dokumentasi", doc.file);
+
+              dokumentasiPromises.push(
+                axiosClient.post("api/dokumentasi", docForm, {
+                  headers: { "Content-Type": "multipart/form-data" },
+                })
+              );
+            }
+          }
+        }
+        if (dokumentasiPromises.length > 0) {
+          await Promise.all(dokumentasiPromises);
+        }
       }
 
       Swal.fire({
@@ -244,10 +248,12 @@ const AddResultPage = () => {
           title: "custom-swal-title",
         },
       });
-
+      
+      const destination = formData.eventName === "PORPROV JATIM XI" ? "/porprov" : "/hasil-pertandingan";
       setTimeout(() => {
-        router.push("/hasil-pertandingan");
+        router.push(destination);
       }, 1500);
+
     } catch (err) {
       console.error("Error saving results:", err);
       setError(

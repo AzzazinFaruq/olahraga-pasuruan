@@ -1,7 +1,9 @@
 package models
+
 import (
 	"time"
 )
+
 type Dokumentasi struct {
 	Id          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Dokumentasi string    `json:"dokumentasi" gorm:"type:varchar(255);not null"`

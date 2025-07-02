@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"backend_golang/models"
 	"backend_golang/setup"
@@ -6,8 +7,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
 	"github.com/gin-gonic/gin"
 )
 func AddDokumentasi(c *gin.Context) {
@@ -44,6 +47,17 @@ func AddDokumentasi(c *gin.Context) {
 		})
 		return
 	}
+	
+	HasilPertandinganId, err := strconv.ParseUint(HasilPertandinganIdStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": "ID Hasil Pertandingan harus berupa angka yang valid",
+		})
+		return
+	}
+	dokumentasi.HasilPertandinganId = uint(HasilPertandinganId)
+	
 	if err := setup.DB.Create(&dokumentasi).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambah dokumentasi"})
 		return
@@ -107,12 +121,16 @@ func UpdateDokumentasi(c *gin.Context) {
 		dokumentasi.Dokumentasi = uploadPath
 	}
 	HasilPertandinganIdStr := strings.TrimSpace(c.PostForm("hasil_pertandingan_id"))
-	if HasilPertandinganIdStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  false,
-			"message": "ID Hasil Pertandingan tidak boleh kosong",
-		})
-		return
+	if HasilPertandinganIdStr != "" {
+		HasilPertandinganId, err := strconv.ParseUint(HasilPertandinganIdStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  false,
+				"message": "ID Hasil Pertandingan harus berupa angka yang valid",
+			})
+			return
+		}
+		dokumentasi.HasilPertandinganId = uint(HasilPertandinganId)
 	}
 	if err := setup.DB.Save(&dokumentasi).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update dokumentasi"})
