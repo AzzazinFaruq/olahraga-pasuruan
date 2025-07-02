@@ -2,14 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import axiosClient from "../../auths/auth-context/axiosClient";
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 
-const ResultDetail = ({ params: paramsPromise }) => {
-  const params = React.use(paramsPromise);
-  const resultId = params.id;
+const ResultDetail = () => {
+  const { id: resultId } = useParams();
   const router = useRouter();
 
   const [result, setResult] = useState(null);

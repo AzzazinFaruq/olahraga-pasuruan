@@ -5,6 +5,7 @@ import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import axiosClient from "../../auths/auth-context/axiosClient";
 import { useParams, useRouter } from "next/navigation";
+import { getImageURL } from "../../utils/config";
 
 const formatTanggal = (dateString) => {
   const options = { day: "numeric", month: "long", year: "numeric" };
@@ -67,8 +68,8 @@ const AthleteDetail = () => {
               <div className="md:w-1/3 mb-6 md:mb-0 flex justify-center">
                 <div className="w-64 h-80 rounded-xl overflow-hidden">
                   <img
-                    src={`http://localhost:8080/${athlete.atlet.foto_3x4}`}
-                    alt={athlete.atlet.foto_bebas}
+                    src={getImageURL(athlete.atlet.foto_3x4)}
+                    alt={athlete.atlet.nama}
                     className="w-full h-full object-cover"
                   />
                 </div>
