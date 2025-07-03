@@ -142,7 +142,7 @@ const AthleteDetail = () => {
                 &larr; Kembali
               </button>
 
-              {isLoggedIn && currentUser && currentUser.role !== 2 && (
+              {isLoggedIn && currentUser && currentUser.role === 1 && (
                 <div className="flex space-x-3">
                   <button
                     onClick={handleDelete}

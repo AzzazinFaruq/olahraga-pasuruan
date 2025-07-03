@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 
 const AddResultPage = () => {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [formData, setFormData] = useState({
     eventName: "",
     cabor: "",
@@ -31,6 +32,35 @@ const AddResultPage = () => {
 
   // Fetch data saat komponen dimuat
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        const user = userRes.data.data;
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        
+        // Redirect if not admin (role 1)
+        if (user.role !== 1) {
+          Swal.fire({
+            icon: "error",
+            title: "Akses Ditolak",
+            text: "Anda tidak memiliki izin untuk mengakses halaman ini",
+          });
+          router.push("/hasil-pertandingan");
+          return;
+        }
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Akses Ditolak",
+          text: "Silakan login terlebih dahulu",
+        });
+        router.push("/auths/masuk");
+        return;
+      }
+    };
+
     const fetchData = async () => {
       try {
         const [athletesRes, caborsRes, nomorsRes, usersRes] = await Promise.all(
@@ -52,8 +82,10 @@ const AddResultPage = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    checkAuth().then(() => {
+      fetchData();
+    });
+  }, [router]);
 
   // Ambil user aktif
   useEffect(() => {

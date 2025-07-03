@@ -10,6 +10,8 @@ import Swal from "sweetalert2";
 
 const AddAthletePage = () => {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [formData, setFormData] = useState({
     nik: "",
     nama: "",
@@ -32,6 +34,36 @@ const AddAthletePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Check auth first
+    const checkAuth = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        const user = userRes.data.data;
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        
+        // Redirect if not admin (role 1)
+        if (user.role !== 1) {
+          Swal.fire({
+            icon: "error",
+            title: "Akses Ditolak",
+            text: "Anda tidak memiliki izin untuk mengakses halaman ini",
+          });
+          router.push("/daftar-atlet");
+          return;
+        }
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Akses Ditolak",
+          text: "Silakan login terlebih dahulu",
+        });
+        router.push("/auths/masuk");
+        return;
+      }
+    };
+
     // Fetch cabang olahraga data
     const fetchCabangOlahraga = async () => {
       try {
@@ -45,8 +77,10 @@ const AddAthletePage = () => {
       }
     };
 
-    fetchCabangOlahraga();
-  }, []);
+    checkAuth().then(() => {
+      fetchCabangOlahraga();
+    });
+  }, [router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

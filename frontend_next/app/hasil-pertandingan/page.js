@@ -256,7 +256,7 @@ const ResultsPage = () => {
               </div>
             </div>
 
-            {isLoggedIn && currentUser && currentUser.role !== 2 && (
+            {isLoggedIn && currentUser && currentUser.role === 1 && (
               <Link
                 href="/hasil-pertandingan/form"
                 className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"

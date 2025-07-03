@@ -102,7 +102,20 @@ const ResultDetail = () => {
       }
     };
 
+    const fetchUser = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        setCurrentUser(userRes.data.data);
+        setIsLoggedIn(true);
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+
     fetchResultDetail();
+    fetchUser();
   }, [resultId]);
 
   const formatDate = (dateString) => {
@@ -243,21 +256,23 @@ const ResultDetail = () => {
               &larr; Kembali
             </button>
 
-            <div className="flex space-x-3">
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 border rounded-md transition text-[color:var(--color-primary)] border-[color:var(--color-primary)] hover:bg-red-50"
-              >
-                Hapus
-              </button>
+            {isLoggedIn && currentUser && currentUser.role === 1 && (
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 border rounded-md transition text-[color:var(--color-primary)] border-[color:var(--color-primary)] hover:bg-red-50"
+                >
+                  Hapus
+                </button>
 
-              <button
-                onClick={handleEdit}
-                className="px-4 py-2 rounded-md transition text-white bg-[color:var(--color-primary)] hover:opacity-90"
-              >
-                Edit
-              </button>
-            </div>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 rounded-md transition text-white bg-[color:var(--color-primary)] hover:opacity-90"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
           </div>
 
           <div
