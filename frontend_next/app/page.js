@@ -6,6 +6,7 @@ import Footer from "./components/footer";
 import axiosClient from "../app/auths/auth-context/axiosClient";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { getDocumentURL } from "./utils/config";
 
 const Dashboard = () => {
   const bannerImages = [
@@ -13,15 +14,7 @@ const Dashboard = () => {
     { id: 2, src: "/image/banner-2.jpg", alt: "Banner 2" },
   ];
 
-  const galleryImages = [
-    { id: 1, alt: "Pertandingan Basket" },
-    { id: 2, alt: "Upacara Pembukaan" },
-    { id: 3, alt: "Atlet Berlari" },
-    { id: 4, alt: "Penyerahan Medali" },
-    { id: 5, alt: "Pertandingan Voli" },
-    { id: 6, alt: "Lomba Renang" },
-  ];
-
+  const [dokumentasiAtlet, setDokumentasiAtlet] = useState([]);
   const router = useRouter();
   const sliderRef = useRef(null);
   const beritaData = [
@@ -89,12 +82,23 @@ const Dashboard = () => {
         console.error("Gagal ambil data:", err);
       });
 
+    axiosClient
+      .get("publik/dokumentasi")
+      .then((res) => {
+        const docs = res.data.data || [];
+        const shuffled = docs.sort(() => 0.5 - Math.random());
+        setDokumentasiAtlet(shuffled.slice(0, 12));
+      })
+      .catch((err) => {
+        console.error("Gagal ambil dokumentasi:", err);
+      });
+
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % bannerImages.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [bannerImages.length]);
 
   return (
     <div
@@ -380,35 +384,59 @@ const Dashboard = () => {
               boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
             }}
           >
-            <div className="relative overflow-hidden h-64 mb-4 rounded-xl">
-              <div className="absolute flex animate-scroll whitespace-nowrap">
-                {galleryImages.map((img) => (
-                  <div key={img.id} className="inline-block mx-4">
-                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
+            {dokumentasiAtlet.length > 0 ? (
+              <>
+                <div className="relative overflow-hidden h-64 mb-4 rounded-xl">
+                  <div className="absolute flex animate-scroll whitespace-nowrap">
+                    {dokumentasiAtlet.slice(0, 6).map((doc) => (
+                      <div key={doc.id} className="inline-block mx-4">
+                        <img
+                          src={getDocumentURL(doc.dokumentasi)}
+                          alt="Dokumentasi Atlet"
+                          className="rounded-xl w-96 h-56 object-cover shadow-md"
+                        />
+                      </div>
+                    ))}
+                    {dokumentasiAtlet.slice(0, 6).map((doc) => (
+                      <div key={`copy-${doc.id}`} className="inline-block mx-4">
+                        <img
+                          src={getDocumentURL(doc.dokumentasi)}
+                          alt="Dokumentasi Atlet"
+                          className="rounded-xl w-96 h-56 object-cover shadow-md"
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {galleryImages.map((img) => (
-                  <div key={`copy-${img.id}`} className="inline-block mx-4">
-                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
-                  </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            <div className="relative overflow-hidden h-64 mb-4 rounded-xl">
-              <div className="absolute flex animate-scroll-reverse whitespace-nowrap">
-                {galleryImages.map((img) => (
-                  <div key={img.id} className="inline-block mx-4">
-                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
+                <div className="relative overflow-hidden h-64 mb-4 rounded-xl">
+                  <div className="absolute flex animate-scroll-reverse whitespace-nowrap">
+                    {dokumentasiAtlet.slice(6, 12).map((doc) => (
+                      <div key={doc.id} className="inline-block mx-4">
+                        <img
+                          src={getDocumentURL(doc.dokumentasi)}
+                          alt="Dokumentasi Atlet"
+                          className="rounded-xl w-96 h-56 object-cover shadow-md"
+                        />
+                      </div>
+                    ))}
+                    {dokumentasiAtlet.slice(6, 12).map((doc) => (
+                      <div key={`copy-${doc.id}`} className="inline-block mx-4">
+                        <img
+                          src={getDocumentURL(doc.dokumentasi)}
+                          alt="Dokumentasi Atlet"
+                          className="rounded-xl w-96 h-56 object-cover shadow-md"
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {galleryImages.map((img) => (
-                  <div key={`copy-${img.id}`} className="inline-block mx-4">
-                    <div className="bg-[var(--color-primary)] rounded-xl w-96 h-56 shadow-md" />
-                  </div>
-                ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-gray-500">Belum ada dokumentasi atlet</p>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
