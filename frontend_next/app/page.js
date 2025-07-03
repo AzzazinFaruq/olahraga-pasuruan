@@ -70,13 +70,32 @@ const Dashboard = () => {
   };
 
   const [pesan, setPesan] = useState("");
+  const [totalatlet, setatlet] = useState("");
+  const [totalcabor, setcabor] = useState("");
+  const [totalnomor, setnomor] = useState("");
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
     axiosClient
-      .get("api/atlet")
+      .get("publik/atlet/count")
       .then((res) => {
-        setPesan(res.data.message);
+        setatlet(res.data.jumlah_atlet)
+      })
+      .catch((err) => {
+        console.error("Gagal ambil data:", err);
+      });
+      axiosClient
+      .get("publik/cabor/count")
+      .then((res) => {
+        setcabor(res.data.jumlah_cabor)
+      })
+      .catch((err) => {
+        console.error("Gagal ambil data:", err);
+      });
+      axiosClient
+      .get("publik/nomor/count")
+      .then((res) => {
+        setnomor(res.data.jumlah_nomor)
       })
       .catch((err) => {
         console.error("Gagal ambil data:", err);
@@ -174,7 +193,7 @@ const Dashboard = () => {
                   color: "var(--color-primary)",
                 }}
               >
-                14,340
+                {totalatlet}
               </div>
               <div
                 className="font-semibold text-center mt-2"
@@ -200,7 +219,7 @@ const Dashboard = () => {
                   color: "var(--color-primary)",
                 }}
               >
-                85
+                {totalcabor}
               </div>
               <div
                 className="font-semibold text-center mt-2"
@@ -226,7 +245,7 @@ const Dashboard = () => {
                   color: "var(--color-primary)",
                 }}
               >
-                245
+                {totalnomor}
               </div>
               <div
                 className="font-semibold text-center mt-2"
