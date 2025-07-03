@@ -202,9 +202,7 @@ const AddResultPage = () => {
         form.append("catatan", formData.catatan);
         form.append("user_id", userId);
 
-        const res = await axiosClient.post("api/hasil/add", form, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const res = await axiosClient.post("api/hasil/add", form);
 
         if (res.data && res.data.data && res.data.data.id) {
           hasilIds.push(res.data.data.id);
@@ -221,9 +219,7 @@ const AddResultPage = () => {
               docForm.append("dokumentasi", doc.file);
 
               dokumentasiPromises.push(
-                axiosClient.post("api/dokumentasi", docForm, {
-                  headers: { "Content-Type": "multipart/form-data" },
-                })
+                axiosClient.post("api/dokumentasi", docForm)
               );
             }
           }

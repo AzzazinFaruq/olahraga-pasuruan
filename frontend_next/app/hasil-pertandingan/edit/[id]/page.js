@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import axiosClient from "@/app/auths/auth-context/axiosClient";
 import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
+import { getDocumentURL } from "@/app/utils/config";
 import Swal from "sweetalert2";
 
 const EditResultPage = () => {
@@ -355,7 +356,7 @@ const EditResultPage = () => {
                       <div className="text-xs mt-1">
                         File lama:{" "}
                         <a
-                          href={`http://localhost:8080/${doc.dokumentasi}`}
+                          href={getDocumentURL(doc.dokumentasi)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 underline"
