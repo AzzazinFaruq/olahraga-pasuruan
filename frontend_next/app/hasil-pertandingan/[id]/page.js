@@ -50,7 +50,7 @@ const ResultDetail = () => {
 
           if (eventName && caborId && nomorId) {
             const nomorResultsResponse = await axiosClient.get(
-              `api/hasil/nomor/${nomorId}`
+              `publik/hasil/nomor/${nomorId}`
             );
 
             const filteredResults = nomorResultsResponse.data.data.filter(
@@ -89,7 +89,7 @@ const ResultDetail = () => {
 
           if (mainResult.id) {
             const dokumentasiRes = await axiosClient.get(
-              `api/dokumentasi/hasil/${mainResult.id}`
+              `publik/dokumentasi/hasil/${mainResult.id}`
             );
             setDokumentasiItems(dokumentasiRes.data.data || []);
           }

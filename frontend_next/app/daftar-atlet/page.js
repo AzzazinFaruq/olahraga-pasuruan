@@ -36,6 +36,18 @@ const AthletesPage = () => {
   }, []);
 
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        setCurrentUser(userRes.data.data);
+        setIsLoggedIn(true);
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem("token");
