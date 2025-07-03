@@ -14,6 +14,8 @@ const AthletesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterCabor, setFilterCabor] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const athletesPerPage = 9;
 
@@ -31,6 +33,23 @@ const AthletesPage = () => {
       .catch((err) => {
         console.error("Gagal ambil data:", err);
       });
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const res = await axiosClient.get("api/user");
+          setCurrentUser(res.data.data);
+          setIsLoggedIn(true);
+        }
+      } catch (err) {
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+    checkAuth();
   }, []);
 
   const caborMap = useMemo(() => {
@@ -178,28 +197,30 @@ const AthletesPage = () => {
             </div>
           </div>
 
-          <Link
-            href="/daftar-atlet/form"
-            className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
-            style={{
-              backgroundColor: "var(--color-primary)",
-              color: "white",
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+          {isLoggedIn && currentUser && currentUser.role !== 2 && (
+            <Link
+              href="/daftar-atlet/form"
+              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+              style={{
+                backgroundColor: "var(--color-primary)",
+                color: "white",
+              }}
             >
-              <path
-                fillRule="evenodd"
-                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Tambah Atlet
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Tambah Atlet
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">

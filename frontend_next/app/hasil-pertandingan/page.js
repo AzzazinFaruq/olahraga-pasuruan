@@ -13,6 +13,8 @@ const ResultsPage = () => {
   const [filterCabor, setFilterCabor] = useState("");
   const [filterNomor, setFilterNomor] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // State for API data
   const [allResults, setAllResults] = useState([]);
@@ -53,7 +55,37 @@ const ResultsPage = () => {
       }
     };
 
+    const fetchUser = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        setCurrentUser(userRes.data.data);
+        setIsLoggedIn(true);
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+
     fetchData();
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const res = await axiosClient.get("api/user");
+          setCurrentUser(res.data.data);
+          setIsLoggedIn(true);
+        }
+      } catch (err) {
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+    checkAuth();
   }, []);
 
   const getMedal = (medali) => {
@@ -224,28 +256,30 @@ const ResultsPage = () => {
               </div>
             </div>
 
-            <Link
-              href="/hasil-pertandingan/form"
-              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
-              style={{
-                backgroundColor: "var(--color-primary)",
-                color: "white",
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
+            {isLoggedIn && currentUser && currentUser.role !== 2 && (
+              <Link
+                href="/hasil-pertandingan/form"
+                className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+                style={{
+                  backgroundColor: "var(--color-primary)",
+                  color: "white",
+                }}
               >
-                <path
-                  fillRule="evenodd"
-                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Tambah Hasil
-            </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Tambah Hasil
+              </Link>
+            )}
           </div>
         </div>
 

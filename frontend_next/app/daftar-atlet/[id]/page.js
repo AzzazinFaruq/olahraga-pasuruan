@@ -18,6 +18,8 @@ const AthleteDetail = () => {
   const { id } = useParams();
   const router = useRouter();
   const [athlete, setAthlete] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -39,8 +41,38 @@ const AthleteDetail = () => {
       }
     };
 
+    const fetchUser = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        setCurrentUser(userRes.data.data);
+        setIsLoggedIn(true);
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+
     fetchData();
+    fetchUser();
   }, [id]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const res = await axiosClient.get("api/user");
+          setCurrentUser(res.data.data);
+          setIsLoggedIn(true);
+        }
+      } catch (err) {
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const handleDelete = async () => {
     const result = await Swal.fire({
@@ -101,31 +133,33 @@ const AthleteDetail = () => {
 
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <button
-              onClick={() => router.back()}
-              className="inline-block cursor-pointer"
-              style={{ color: "var(--color-primary)" }}
-            >
-              &larr; Kembali
-            </button>
-
-            <div className="flex space-x-3">
+            <div className="flex justify-between items-center mb-6">
               <button
-                onClick={handleDelete}
-                className="px-4 py-2 border rounded-md transition text-[color:var(--color-primary)] border-[color:var(--color-primary)] hover:bg-red-50"
+                onClick={() => router.back()}
+                className="inline-block cursor-pointer"
+                style={{ color: "var(--color-primary)" }}
               >
-                Hapus
+                &larr; Kembali
               </button>
 
-              <button
-                onClick={handleEdit}
-                className="px-4 py-2 rounded-md transition text-white bg-[color:var(--color-primary)] hover:opacity-90"
-              >
-                Edit
-              </button>
+              {isLoggedIn && currentUser && currentUser.role !== 2 && (
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 border rounded-md transition text-[color:var(--color-primary)] border-[color:var(--color-primary)] hover:bg-red-50"
+                  >
+                    Hapus
+                  </button>
+
+                  <button
+                    onClick={handleEdit}
+                    className="px-4 py-2 rounded-md transition text-white bg-[color:var(--color-primary)] hover:opacity-90"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
 
           <div
             className="bg-white rounded-2xl shadow-xl p-8"

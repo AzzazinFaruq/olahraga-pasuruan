@@ -18,6 +18,8 @@ const ResultDetail = () => {
   const [dokumentasiItems, setDokumentasiItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const getMedalPriority = (medal) => {
     switch (medal) {
