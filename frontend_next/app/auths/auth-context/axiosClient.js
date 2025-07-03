@@ -2,7 +2,7 @@
 
 import axios from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://194.31.53.241:7891";
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
 const axiosClient = axios.create({
   baseURL: baseURL,
