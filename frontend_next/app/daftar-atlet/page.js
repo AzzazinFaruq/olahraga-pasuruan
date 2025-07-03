@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import axiosClient from "../auths/auth-context/axiosClient";
+import { getImageURL } from "../utils/config";
 
 const AthletesPage = () => {
   const [athletes, setAthletes] = useState([]);
@@ -213,7 +214,7 @@ const AthletesPage = () => {
                   <div className="w-12 h-12 min-w-[48px] rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
                     {athlete.foto_3x4 ? (
                       <img
-                        src={`http://localhost:8080/${athlete.foto_3x4}`}
+                        src={getImageURL(athlete.foto_3x4)}
                         alt={athlete.nama}
                         className="w-full h-full object-cover"
                       />

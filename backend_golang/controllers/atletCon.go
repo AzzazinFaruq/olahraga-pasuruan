@@ -1,4 +1,5 @@
 package controllers
+
 import (
 	"backend_golang/models"
 	"backend_golang/setup"
@@ -10,58 +11,90 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/gin-gonic/gin"
 )
-func isValidNIK(nik string) bool {
-	nikRegex := regexp.MustCompile(`^\d{16}$`)
-	return nikRegex.MatchString(nik)
-}
+
+func isValidNIK(nik string) bool { return regexp.MustCompile(`^\d{16}$`).MatchString(nik) }
+
 func isValidImageFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
-	allowedExts := []string{".jpg", ".jpeg", ".png"}
-	for _, allowedExt := range allowedExts {
-		if ext == allowedExt {
-			return true
-		}
+	for _, allowedExt := range []string{".jpg", ".jpeg", ".png"} {
+		if ext == allowedExt { return true }
 	}
 	return false
 }
+
+func verifyImageIntegrity(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil { return fmt.Errorf("gagal membuka file: %v", err) }
+	defer file.Close()
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && n == 0 { return fmt.Errorf("gagal membaca file: %v", err) }
+	mimeType := http.DetectContentType(buffer[:n])
+	for _, validType := range []string{"image/jpeg", "image/png"} {
+		if strings.HasPrefix(mimeType, validType) { return nil }
+	}
+	if mimeType == "application/octet-stream" || mimeType == "text/plain" {
+		ext := strings.ToLower(filepath.Ext(filePath))
+		if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+			if n >= 4 && ((buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF) || (n >= 8 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47)) { return nil }
+		}
+	}
+	return fmt.Errorf("tipe file tidak valid. File harus berupa gambar JPEG atau PNG. Terdeteksi: %s", mimeType)
+}
+
 func sanitizeFilename(filename string) string {
-	reg := regexp.MustCompile(`[^a-zA-Z0-9\.\-_]`)
-	return reg.ReplaceAllString(filename, "_")
+	ext := filepath.Ext(filename)
+	name := strings.TrimSuffix(filename, ext)
+	cleanName := regexp.MustCompile(`[^a-zA-Z0-9\-_]`).ReplaceAllString(name, "_")
+	if len(cleanName) > 50 { cleanName = cleanName[:50] }
+	if cleanName == "" { cleanName = "file" }
+	return cleanName + ext
 }
 func handleFileUpload(c *gin.Context, formFieldName string, uploadSubDir string) (string, error) {
 	file, err := c.FormFile(formFieldName)
 	if err != nil {
-		if err == http.ErrMissingFile {
-			return "", nil
-		}
+		if err == http.ErrMissingFile { return "", nil }
 		return "", err
 	}
-	if !isValidImageFile(file.Filename) {
-		return "", fmt.Errorf("format file tidak didukung. Gunakan JPG, JPEG, atau PNG")
+	if !isValidImageFile(file.Filename) { return "", fmt.Errorf("format file tidak didukung. Gunakan JPG, JPEG, atau PNG") }
+	if file.Size > 5*1024*1024 { return "", fmt.Errorf("ukuran file maksimal 5MB") }
+	src, err := file.Open()
+	if err != nil { return "", fmt.Errorf("gagal membuka file upload") }
+	defer src.Close()
+	buffer := make([]byte, 512)
+	n, err := src.Read(buffer)
+	if err != nil && n == 0 { return "", fmt.Errorf("gagal membaca file upload") }
+	src.Seek(0, 0)
+	mimeType := http.DetectContentType(buffer[:n])
+	isValidMime := false
+	for _, validType := range []string{"image/jpeg", "image/png", "image/jpg"} {
+		if strings.HasPrefix(mimeType, validType) || mimeType == "application/octet-stream" {
+			if mimeType == "application/octet-stream" {
+				ext := strings.ToLower(filepath.Ext(file.Filename))
+				if ext == ".jpg" || ext == ".jpeg" || ext == ".png" { isValidMime = true }
+			} else { isValidMime = true }
+			break
+		}
 	}
-	if file.Size > 5*1024*1024 {
-		return "", fmt.Errorf("ukuran file maksimal 5MB")
-	}
+	if !isValidMime { return "", fmt.Errorf("tipe file tidak valid. File harus berupa gambar JPEG, JPG, atau PNG. Terdeteksi: %s", mimeType) }
 	timestamp := time.Now().Unix()
 	sanitizedFilename := sanitizeFilename(file.Filename)
 	newFilename := fmt.Sprintf("%d_%s", timestamp, sanitizedFilename)
-	uploadPath := filepath.Join("public/uploads", uploadSubDir, newFilename)
-	if err := os.MkdirAll(filepath.Dir(uploadPath), 0755); err != nil {
-		return "", fmt.Errorf("gagal membuat direktori upload")
-	}
-	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-		return "", fmt.Errorf("gagal menyimpan file")
-	}
+	uploadDir := filepath.Join("public", "uploads", uploadSubDir)
+	uploadPath := filepath.Join(uploadDir, newFilename)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil { return "", fmt.Errorf("gagal membuat direktori upload: %v", err) }
+	if err := c.SaveUploadedFile(file, uploadPath); err != nil { return "", fmt.Errorf("gagal menyimpan file: %v", err) }
+	fileInfo, err := os.Stat(uploadPath)
+	if os.IsNotExist(err) { return "", fmt.Errorf("file gagal tersimpan") }
+	if fileInfo.Size() != file.Size { os.Remove(uploadPath); return "", fmt.Errorf("file corrupt: ukuran tidak sesuai") }
+	if err := verifyImageIntegrity(uploadPath); err != nil { os.Remove(uploadPath); return "", fmt.Errorf("file corrupt setelah upload: %v", err) }
 	return uploadPath, nil
 }
 func removeFileIfExists(filePath string) error {
-	if filePath != "" {
-		if _, err := os.Stat(filePath); err == nil {
-			return os.Remove(filePath)
-		}
-	}
+	if filePath != "" { if _, err := os.Stat(filePath); err == nil { return os.Remove(filePath) } }
 	return nil
 }
 func GetAllAtlet(c *gin.Context) {
@@ -99,26 +132,36 @@ func GetAtletById(c *gin.Context) {
 }
 func AddAtlet(c *gin.Context) {
 	var atlet models.Atlet
+
+	// Upload foto 3x4
+	fmt.Printf("Processing foto_3x4 upload...\n")
 	foto3x4Path, err := handleFileUpload(c, "foto_3x4", "foto_3x4")
 	if err != nil {
+		fmt.Printf("Error uploading foto_3x4: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  false,
-			"message": err.Error(),
+			"message": "Error upload foto 3x4: " + err.Error(),
 		})
 		return
 	}
 	if foto3x4Path != "" {
+		fmt.Printf("Foto 3x4 uploaded successfully to: %s\n", foto3x4Path)
 		atlet.Foto3x4 = foto3x4Path
 	}
+
+	// Upload foto bebas
+	fmt.Printf("Processing foto_bebas upload...\n")
 	fotoBebasPath, err := handleFileUpload(c, "foto_bebas", "foto_bebas")
 	if err != nil {
+		fmt.Printf("Error uploading foto_bebas: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  false,
-			"message": err.Error(),
+			"message": "Error upload foto bebas: " + err.Error(),
 		})
 		return
 	}
 	if fotoBebasPath != "" {
+		fmt.Printf("Foto bebas uploaded successfully to: %s\n", fotoBebasPath)
 		atlet.FotoBebas = fotoBebasPath
 	}
 	NIK := strings.TrimSpace(c.PostForm("nik"))
@@ -256,7 +299,7 @@ func AddAtlet(c *gin.Context) {
 		return
 	}
 	atlet.NamaSekolah = NamaSekolah
-	
+
 	tx := setup.DB.Begin()
 	if err := tx.Create(&atlet).Error; err != nil {
 		tx.Rollback()
@@ -268,31 +311,31 @@ func AddAtlet(c *gin.Context) {
 	}
 
 	caborIdStr := strings.TrimSpace(c.PostForm("cabor_id"))
-if caborIdStr != "" {
-    caborId, err := strconv.ParseUint(caborIdStr, 10, 32)
-    if err != nil {
-        tx.Rollback()
-        c.JSON(http.StatusBadRequest, gin.H{
-            "status":  false,
-            "message": "ID Cabang Olahraga harus berupa angka",
-        })
-        return
-    }
+	if caborIdStr != "" {
+		caborId, err := strconv.ParseUint(caborIdStr, 10, 32)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  false,
+				"message": "ID Cabang Olahraga harus berupa angka",
+			})
+			return
+		}
 
-    // ALUULLL WAS HERE
-    atletCabor := models.AtletCabor{
-        AtletId: atlet.Id,
-        CaborId: uint(caborId),
-    }
-    if err := tx.Create(&atletCabor).Error; err != nil {
-        tx.Rollback()
-        c.JSON(http.StatusInternalServerError, gin.H{
-            "status":  false,
-            "message": "Gagal menghubungkan atlet dengan cabor: " + err.Error(),
-        })
-        return
-    }
-}
+		// ALUULLL WAS HERE
+		atletCabor := models.AtletCabor{
+			AtletId: atlet.Id,
+			CaborId: uint(caborId),
+		}
+		if err := tx.Create(&atletCabor).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  false,
+				"message": "Gagal menghubungkan atlet dengan cabor: " + err.Error(),
+			})
+			return
+		}
+	}
 
 	tx.Commit()
 	setup.DB.Preload("Cabor").First(&atlet, atlet.Id)

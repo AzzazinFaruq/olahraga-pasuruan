@@ -107,12 +107,7 @@ const AddAthletePage = () => {
         athleteForm.append("foto_bebas", formData.foto_bebas);
 
       const athleteRes = await axiosClient.post("api/atlet/add",
-        athleteForm,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        athleteForm
       );
 
       if (!athleteRes.data.status) {
@@ -128,12 +123,7 @@ const AddAthletePage = () => {
         assignForm.append("cabor_id", formData.cabor_id);
 
         const assignRes = await axiosClient.post("api/atlet-cabor/assign",
-          assignForm,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+          assignForm
         );
 
         if (!assignRes.data.status) {

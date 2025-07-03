@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://157.10.160.86:8080';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 
 async function proxyRequest(request, { params }) {
   const { path } = params;
@@ -12,21 +12,49 @@ async function proxyRequest(request, { params }) {
     
     const requestInit = {
       method: request.method,
-      headers: {
-        'Content-Type': request.headers.get('Content-Type') || 'application/json',
-      },
+      headers: {},
     };
 
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader) {
-      requestInit.headers['Authorization'] = authHeader;
+    // Copy relevant headers from the original request
+    const headersToProxy = [
+      'authorization',
+      'content-type',
+      'accept',
+      'user-agent',
+      'accept-language',
+      'accept-encoding'
+    ];
+
+    headersToProxy.forEach(headerName => {
+      const headerValue = request.headers.get(headerName);
+      if (headerValue) {
+        requestInit.headers[headerName] = headerValue;
+      }
+    });
+
+    // Set default content-type only if not already set
+    if (!requestInit.headers['content-type']) {
+      requestInit.headers['content-type'] = 'application/json';
     }
 
     if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
       try {
-        const body = await request.text();
-        if (body) {
-          requestInit.body = body;
+        // Handle FormData (multipart) differently from JSON
+        const contentType = request.headers.get('Content-Type');
+        
+        if (contentType && contentType.includes('multipart/form-data')) {
+          // For multipart/form-data, use formData() method
+          const formData = await request.formData();
+          requestInit.body = formData;
+          requestInit.duplex = 'half'; // Required for streaming body
+          // Remove Content-Type to let fetch handle boundary
+          delete requestInit.headers['content-type'];
+        } else {
+          // For JSON or other text content
+          const body = await request.text();
+          if (body) {
+            requestInit.body = body;
+          }
         }
       } catch (error) {
         console.error('Error reading request body:', error);

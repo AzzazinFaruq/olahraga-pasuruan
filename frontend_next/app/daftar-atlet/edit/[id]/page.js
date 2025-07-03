@@ -149,12 +149,7 @@ const EditAthletePage = () => {
       // Update athlete data
       const athleteRes = await axiosClient.put(
         `api/atlet/update/${formData.atlet_id || id}`,
-        athleteForm,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        athleteForm
       );
 
       if (!athleteRes.data.message) {

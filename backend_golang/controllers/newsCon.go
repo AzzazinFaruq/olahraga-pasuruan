@@ -3,9 +3,11 @@ package controllers
 import (
 	"backend_golang/models"
 	"backend_golang/setup"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,43 +15,59 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Helper untuk validasi file gambar
 func isValidImageFileNews(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
-	allowedExts := []string{".jpg", ".jpeg", ".png"}
-	for _, allowedExt := range allowedExts {
-		if ext == allowedExt {
-			return true
-		}
+	for _, allowedExt := range []string{".jpg", ".jpeg", ".png"} {
+		if ext == allowedExt { return true }
 	}
 	return false
 }
 
-// Helper upload file cover news
+func sanitizeFilenameNews(filename string) string {
+	ext := filepath.Ext(filename)
+	name := strings.TrimSuffix(filename, ext)
+	cleanName := regexp.MustCompile(`[^a-zA-Z0-9\-_]`).ReplaceAllString(name, "_")
+	if len(cleanName) > 50 { cleanName = cleanName[:50] }
+	if cleanName == "" { cleanName = "news" }
+	return cleanName + ext
+}
+
+func verifyImageIntegrityNews(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil { return fmt.Errorf("gagal membuka file: %v", err) }
+	defer file.Close()
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && n == 0 { return fmt.Errorf("gagal membaca file: %v", err) }
+	mimeType := http.DetectContentType(buffer[:n])
+	for _, validType := range []string{"image/jpeg", "image/png"} {
+		if strings.HasPrefix(mimeType, validType) { return nil }
+	}
+	if mimeType == "application/octet-stream" {
+		ext := strings.ToLower(filepath.Ext(filePath))
+		if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+			if n >= 4 && ((buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF) || (n >= 8 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47)) { return nil }
+		}
+	}
+	return fmt.Errorf("tipe file tidak valid. File harus berupa gambar JPEG atau PNG. Terdeteksi: %s", mimeType)
+}
+
 func handleCoverUpload(c *gin.Context, formFieldName string) (string, error) {
 	file, err := c.FormFile(formFieldName)
 	if err != nil {
-		if err == http.ErrMissingFile {
-			return "", nil
-		}
+		if err == http.ErrMissingFile { return "", nil }
 		return "", err
 	}
-	if !isValidImageFileNews(file.Filename) {
-		return "", gin.Error{Err: err, Type: gin.ErrorTypeBind, Meta: "Format file tidak didukung. Gunakan JPG, JPEG, atau PNG"}
-	}
-	if file.Size > 5*1024*1024 {
-		return "", gin.Error{Err: err, Type: gin.ErrorTypeBind, Meta: "Ukuran file maksimal 5MB"}
-	}
+	if !isValidImageFileNews(file.Filename) { return "", fmt.Errorf("format file tidak didukung. Gunakan JPG, JPEG, atau PNG") }
+	if file.Size > 5*1024*1024 { return "", fmt.Errorf("ukuran file maksimal 5MB") }
+	sanitizedFilename := sanitizeFilenameNews(file.Filename)
 	timestamp := time.Now().Unix()
-	sanitizedFilename := strings.ReplaceAll(file.Filename, " ", "_")
-	newFilename := strconv.FormatInt(timestamp, 10) + "_" + sanitizedFilename
-	uploadPath := filepath.Join("public/uploads/news", newFilename)
-	if err := os.MkdirAll(filepath.Dir(uploadPath), 0755); err != nil {
-		return "", gin.Error{Err: err, Type: gin.ErrorTypePrivate, Meta: "Gagal membuat direktori upload"}
-	}
-	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-		return "", gin.Error{Err: err, Type: gin.ErrorTypePrivate, Meta: "Gagal menyimpan file"}
-	}
+	newFilename := fmt.Sprintf("%d_%s", timestamp, sanitizedFilename)
+	uploadDir := "public/uploads/news"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil { return "", fmt.Errorf("gagal membuat direktori upload: %v", err) }
+	uploadPath := filepath.Join(uploadDir, newFilename)
+	if err := c.SaveUploadedFile(file, uploadPath); err != nil { return "", fmt.Errorf("gagal menyimpan file: %v", err) }
+	if err := verifyImageIntegrityNews(uploadPath); err != nil { os.Remove(uploadPath); return "", fmt.Errorf("file upload gagal validasi: %v", err) }
 	return uploadPath, nil
 }
 

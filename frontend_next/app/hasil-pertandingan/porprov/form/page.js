@@ -183,7 +183,7 @@ const AddResultPage = () => {
         return;
       }
 
-      if (!users.Id) {
+      if (!currentUser || !currentUser.Id) {
         setError("Data user belum dimuat");
         setIsSubmitting(false);
         return;
@@ -198,11 +198,9 @@ const AddResultPage = () => {
         form.append("event_name", formData.eventName);
         form.append("medali", athlete.posisi);
         form.append("catatan", formData.catatan);
-        form.append("user_id", users.Id);
+        form.append("user_id", currentUser.Id);
 
-        const res = await axiosClient.post("api/hasil/add", form, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        const res = await axiosClient.post("api/hasil/add", form);
 
         hasilIds.push(res.data.data.id);
       }
@@ -217,9 +215,7 @@ const AddResultPage = () => {
             docForm.append("dokumentasi", doc.file);
 
             dokumentasiPromises.push(
-              axiosClient.post("api/dokumentasi", docForm, {
-                headers: { "Content-Type": "multipart/form-data" },
-              })
+              axiosClient.post("api/dokumentasi", docForm)
             );
           }
         }

@@ -314,7 +314,7 @@ const ResultDetail = () => {
                       <div className="w-12 h-12 min-w-[48px] rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
                         {athleteResult.atlet?.foto_3x4 ? (
                           <img
-                            src={`http://localhost:8080/${athleteResult.atlet.foto_3x4}`}
+                            src={getImageURL(athleteResult.atlet.foto_3x4)}
                             alt={athleteResult.atlet.nama || "Atlet"}
                             className="w-full h-full object-cover"
                           />
