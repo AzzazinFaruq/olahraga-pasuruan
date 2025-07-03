@@ -4,8 +4,8 @@ import React from "react";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import axiosClient from "../app/auths/auth-context/axiosClient";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 const Dashboard = () => {
   const bannerImages = [
@@ -21,6 +21,60 @@ const Dashboard = () => {
     { id: 5, alt: "Pertandingan Voli" },
     { id: 6, alt: "Lomba Renang" },
   ];
+
+  const router = useRouter();
+  const sliderRef = useRef(null);
+  const beritaData = [
+    {
+      id: 1,
+      cover: "/image/berita-1.jpg",
+      title: "Pasuruan Juara Umum PORPROV 2025",
+      excerpt:
+        "Kabupaten Pasuruan berhasil menjadi juara umum pada ajang Pekan Olahraga Provinsi (PORPROV) Jawa Timur 2025 dengan meraih 120 medali emas, 98 perak, dan 76 perunggu.",
+    },
+    {
+      id: 2,
+      cover: "/image/berita-2.jpg",
+      title: "Pembangunan Stadion Baru Pasuruan",
+      excerpt:
+        "Pemerintah Kabupaten Pasuruan memulai pembangunan stadion baru berstandar internasional yang akan menjadi pusat pelatihan atlet.",
+    },
+    {
+      id: 3,
+      cover: "/image/berita-1.jpg",
+      title: "Atlet Pasuruan Raih Medali di SEA Games",
+      excerpt:
+        "Atlet renang asal Pasuruan, Anisa Rahma, berhasil meraih medali emas di SEA Games 2025 pada nomor 200m gaya bebas.",
+    },
+    {
+      id: 4,
+      cover: "/image/berita-2.jpg",
+      title: "Pelatnas Atlet Pasuruan",
+      excerpt:
+        "Sebanyak 50 atlet dari Kabupaten Pasuruan akan mengikuti pelatnas (pelatihan nasional) untuk persiapan menghadapi PON 2026.",
+    },
+    {
+      id: 5,
+      cover: "/image/berita-1.jpg",
+      title: "Turnamen Sepak Bola Pelajar",
+      excerpt:
+        "Dinas Pemuda dan Olahraga Kabupaten Pasuruan menggelar turnamen sepak bola pelajar se-Kabupaten Pasuruan yang diikuti oleh 100 tim.",
+    },
+  ];
+
+  const scrollNews = (direction) => {
+    if (sliderRef.current) {
+      const scrollAmount = 400;
+      sliderRef.current.scrollBy({
+        left: direction === "next" ? scrollAmount : -scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const handleNewsClick = (id) => {
+    router.push(`/berita/${id}`);
+  };
 
   const [pesan, setPesan] = useState("");
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -233,15 +287,25 @@ const Dashboard = () => {
                   className="text-gray-600 leading-relaxed"
                   style={{ fontSize: "var(--font-size-normal)" }}
                 >
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris nisi ut aliquip ex ea commodo consequat.
+                  Salam Olah Raga
+                  <br />
+                  Semangat Sportifitas dan Prestasi Pada Atlet-atlet Kabupaten
+                  Pasuruan,
                   <br />
                   <br />
-                  Duis aute irure dolor in reprehenderit in voluptate velit esse
-                  cillum dolore eu fugiat nulla pariatur. Excepteur sint
-                  occaecat cupidatat non proident.
+                  Selaku Bupati dan mewakili seluruh masyarakat Kabupaten
+                  Pasuruan khususnya pecinta olah raga, Kami sampaikan selamat
+                  kepada KONI Kabupaten Pasuruan masa bakti 2025-2029. Ketua dan
+                  Pengurus KONI yang baru dilantik saat ini harus langsung
+                  tancap gas bersama dengan seluruh atlet, Cabor, serta berbagai
+                  Pihak dalam menyongsong pretasi dan sportifitas dalam ajang
+                  PORPROV Jatim IV tahun 2025 di Malang Raya. Kabupaten Pasuruan
+                  pada event Proprov IX ini, mengirimkan Sebanyak 630 atlet,
+                  pelatih dan official dari beberapa cabang olahraga (cabor) .
+                  Dengan ridho Alloh SWT, kekompakan, soliditas, serta
+                  perjuangan kami yakin seluruh atlet dan official yang berjuang
+                  akan mendapatkan hasil yang maksimal. Sekalil lagi semangat
+                  dan membawa prestasi yang Membanggakan
                 </p>
               </div>
             </div>
@@ -268,30 +332,37 @@ const Dashboard = () => {
                     className="block font-normal text-gray-500 mt-1"
                     style={{ fontSize: "var(--font-size-normal)" }}
                   >
-                    Ketua KONI Kabupaten Pasuruan
+                    Ketua Umum KONI Kabupaten Pasuruan
                   </span>
                 </h3>
                 <p
                   className="text-gray-600 leading-relaxed"
                   style={{ fontSize: "var(--font-size-normal)" }}
                 >
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris nisi ut aliquip ex ea commodo consequat.
+                  Salam Olah Raga
+                  <br />
+                  Salam sehat dan sportif untuk meraih prestasi
                   <br />
                   <br />
-                  Duis aute irure dolor in reprehenderit in voluptate velit esse
-                  cillum dolore eu fugiat nulla pariatur. Excepteur sint
-                  occaecat cupidatat non proident.
+                  Amanat bapak Bupati dan seluruh masyarakat pecinta olah raga
+                  Kabupaten Pasuruan kepada Kami dan Pengurus KONI Kabupaten
+                  Pasuruan masa bakti 2025 -2029 merupakan amanat perjuangan
+                  yang besar untuk melanjutkan perkaderan bagi anak-anak muda
+                  Pasuruan di bidang olah raga. Oleh karena itu semangat kami
+                  adalah berorientasi pada peningkatan pembinaan secara
+                  transparan, terukur dan membawa prestasi baik bagi atlet,
+                  cabor, serta secara khusus Kabupaten Pasuruan. Pengursu KONI
+                  yang baru dilantik bersama Atlet dan Official, segera berjuang
+                  dalam ajang Porprov IX tahun 2025 Provinsi Jawa Timur. Kami
+                  mohon doa dan dukungan, semoga dengan perjuangan, soliditas
+                  serta sportifitas akan membawa prestasi yang membanggakan bagi
+                  atlet dan seluruh masyarakat Kabupaten Pasuruan.
                 </p>
               </div>
             </div>
           </div>
-         
         </section>
 
-        {/* Slider */}
         <div className="mb-16">
           <h2
             className="font-bold text-center mb-8"
@@ -340,6 +411,117 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        <section className="mb-16 px-4">
+          <div className="mb-6">
+            <h2
+              className="text-3xl font-bold text-gray-800 mb-2"
+              style={{ fontSize: "var(--font-size-large)" }}
+            >
+              Berita Terkini
+            </h2>
+            <div
+              className="w-24 h-1 rounded-full"
+              style={{
+                background:
+                  "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
+              }}
+            ></div>
+          </div>
+
+          <div className="relative news-slider-container">
+            {/* Navigation buttons - hidden by default, show on hover */}
+            <button
+              onClick={() => scrollNews("prev")}
+              className="news-navigation absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-opacity duration-300 opacity-0"
+              aria-label="Previous news"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-700"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => scrollNews("next")}
+              className="news-navigation absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-opacity duration-300 opacity-0"
+              aria-label="Next news"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-700"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+
+            {/* News cards slider */}
+            <div
+              ref={sliderRef}
+              className="flex overflow-x-auto hide-scrollbar space-x-6 py-2 px-2"
+            >
+              {beritaData.map((berita) => (
+                <div
+                  key={berita.id}
+                  onClick={() => handleNewsClick(berita.id)}
+                  className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                >
+                  <div className="h-48 overflow-hidden relative">
+                    <img
+                      src={berita.cover}
+                      alt={berita.title}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-5">
+                    {/* Hapus kategori dan tanggal */}
+                    <h3 className="font-bold text-lg mb-2 text-gray-800 line-clamp-2">
+                      {berita.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm line-clamp-3">
+                      {berita.excerpt}
+                    </p>
+                    <div className="mt-4 flex items-center text-[var(--color-primary)] text-sm font-medium">
+                      Baca selengkapnya
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 ml-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />

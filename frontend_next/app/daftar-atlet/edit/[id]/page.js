@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Navbar from "../../components/navbar";
-import Footer from "../../components/footer";
-import axiosClient from "../../auths/auth-context/axiosClient";
-import { useRouter } from "next/navigation";
+import Navbar from "../../../components/navbar";
+import Footer from "../../../components/footer";
+import axiosClient from "../../../auths/auth-context/axiosClient";
+import { useParams, useRouter } from "next/navigation";
+import { getImageURL } from "../../../utils/config";
 import Swal from "sweetalert2";
 
-const AddAthletePage = () => {
+const EditAthletePage = () => {
+  const { id } = useParams();
   const router = useRouter();
   const [formData, setFormData] = useState({
     nik: "",
@@ -28,25 +30,63 @@ const AddAthletePage = () => {
   const [cabangOlahragaList, setCabangOlahragaList] = useState([]);
   const [preview3x4, setPreview3x4] = useState("");
   const [previewBebas, setPreviewBebas] = useState("");
+  const [currentFoto3x4, setCurrentFoto3x4] = useState("");
+  const [currentFotoBebas, setCurrentFotoBebas] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch cabang olahraga data
-    const fetchCabangOlahraga = async () => {
-      try {
-        const response = await axiosClient.get("api/cabor");
-        if (response.data.status && response.data.data) {
-          setCabangOlahragaList(response.data.data);
-        }
-      } catch (err) {
-        console.error("Gagal mengambil data cabang olahraga:", err);
-        setError("Gagal memuat daftar cabang olahraga");
-      }
-    };
+  const fetchData = async () => {
+    try {
+      // 1. Ambil daftar cabor (untuk <select>)
+      const caborRes = await axiosClient.get("api/cabor");
+      setCabangOlahragaList(caborRes.data?.data || []);
 
-    fetchCabangOlahraga();
-  }, []);
+      if (id) {
+        // 2. Ambil data atlet
+        const atletRes = await axiosClient.get(`api/atlet/${id}`);
+        const atlet = atletRes.data?.data;
+
+        // 3. Ambil daftar cabor dari relasi (biasanya satu)
+        const relasiRes = await axiosClient.get(`api/atlet-cabor/atlet/${id}`);
+        const cabor = relasiRes.data?.data[0] || null;
+
+        // 4. Gabungkan ke form
+        if (atlet) {
+          setFormData({
+            nik: atlet.nik || "",
+            nama: atlet.nama || "",
+            tempat_lahir: atlet.tempat_lahir || "",
+            tanggal_lahir: atlet.tanggal_lahir?.split("T")[0] || "",
+            jenis_kelamin: atlet.jenis_kelamin || "",
+            alamat: atlet.alamat || "",
+            sekolah: atlet.sekolah || "",
+            nama_sekolah: atlet.nama_sekolah || "",
+            nama_ortu: atlet.nama_ortu || "",
+            cabor_id: cabor?.id || "", // ambil id cabor dari hasil relasi
+            foto_3x4: null,
+            foto_bebas: null,
+          });
+
+          if (atlet.foto_3x4) setCurrentFoto3x4(getImageURL(atlet.foto_3x4));
+          if (atlet.foto_bebas) setCurrentFotoBebas(getImageURL(atlet.foto_bebas));
+        } else {
+          setError("Data atlet tidak ditemukan.");
+        }
+      }
+    } catch (err) {
+      console.error("Gagal memuat data:", err);
+      setError("Terjadi kesalahan saat mengambil data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [id]);
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -106,7 +146,9 @@ const AddAthletePage = () => {
       if (formData.foto_bebas)
         athleteForm.append("foto_bebas", formData.foto_bebas);
 
-      const athleteRes = await axiosClient.post("api/atlet/add",
+      // Update athlete data
+      const athleteRes = await axiosClient.put(
+        `api/atlet/update/${formData.atlet_id || id}`,
         athleteForm,
         {
           headers: {
@@ -115,38 +157,14 @@ const AddAthletePage = () => {
         }
       );
 
-      if (!athleteRes.data.status) {
-        throw new Error(athleteRes.data.message || "Gagal menambahkan atlet");
-      }
-
-      const newAthleteId = athleteRes.data.data.id;
-
-      // Step 2: Assign cabor if selected
-      if (formData.cabor_id) {
-        const assignForm = new FormData();
-        assignForm.append("atlet_id", newAthleteId);
-        assignForm.append("cabor_id", formData.cabor_id);
-
-        const assignRes = await axiosClient.post("api/atlet-cabor/assign",
-          assignForm,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        if (!assignRes.data.status) {
-          throw new Error(
-            assignRes.data.message || "Gagal menghubungkan atlet dengan cabor"
-          );
-        }
+      if (!athleteRes.data.message) {
+        throw new Error("Gagal mengupdate atlet");
       }
 
       Swal.fire({
         icon: "success",
         title: "Sukses!",
-        text: "Atlet berhasil ditambahkan!",
+        text: "Data atlet berhasil diperbarui!",
         toast: true,
         position: "top-end",
         showConfirmButton: false,
@@ -160,19 +178,27 @@ const AddAthletePage = () => {
       });
 
       setTimeout(() => {
-        router.push("/daftar-atlet");
+        router.back();
       }, 1500);
     } catch (err) {
       console.error("Error:", err);
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Terjadi kesalahan saat menambahkan atlet"
+          "Terjadi kesalahan saat memperbarui atlet"
       );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -216,6 +242,12 @@ const AddAthletePage = () => {
                           alt="Preview 3x4"
                           className="w-full h-full object-cover"
                         />
+                      ) : currentFoto3x4 ? (
+                        <img
+                          src={currentFoto3x4}
+                          alt="Current 3x4"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="text-gray-400 text-center p-4">
                           Belum ada foto 3x4
@@ -227,8 +259,10 @@ const AddAthletePage = () => {
                       accept="image/*"
                       onChange={handleFile3x4Change}
                       className="mt-2 w-full p-2 rounded-lg border border-gray-300"
-                      required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Kosongkan jika tidak ingin mengubah foto
+                    </p>
                   </div>
 
                   {/* Foto Bebas */}
@@ -243,6 +277,12 @@ const AddAthletePage = () => {
                           alt="Preview Bebas"
                           className="w-full h-full object-cover"
                         />
+                      ) : currentFotoBebas ? (
+                        <img
+                          src={currentFotoBebas}
+                          alt="Current Bebas"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="text-gray-400 text-center p-4">
                           Belum ada foto bebas
@@ -254,8 +294,10 @@ const AddAthletePage = () => {
                       accept="image/*"
                       onChange={handleFileBebasChange}
                       className="mt-2 w-full p-2 rounded-lg border border-gray-300"
-                      required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Kosongkan jika tidak ingin mengubah foto
+                    </p>
                   </div>
                 </div>
 
@@ -495,7 +537,7 @@ const AddAthletePage = () => {
                         style={{ backgroundColor: "var(--color-primary)" }}
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? "Menyimpan..." : "Simpan"}
+                        {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                       </button>
                     </div>
                   </div>
@@ -511,4 +553,4 @@ const AddAthletePage = () => {
   );
 };
 
-export default AddAthletePage;
+export default EditAthletePage;

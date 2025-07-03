@@ -22,6 +22,7 @@ const AddResultPage = () => {
   const [athletes, setAthletes] = useState([]);
   const [cabors, setCabors] = useState([]);
   const [nomors, setNomors] = useState([]);
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [idHasil, setIdHasil] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +45,7 @@ const AddResultPage = () => {
         setAthletes(athletesRes.data.data || []);
         setCabors(caborsRes.data.data || []);
         setNomors(nomorsRes.data.data || []);
-        setCurrentUser(usersRes.data.data || null);
+        setUsers(usersRes.data.data || []);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Gagal memuat data");
@@ -182,7 +183,7 @@ const AddResultPage = () => {
         return;
       }
 
-      if (!currentUser || (!currentUser.Id && !currentUser.id)) {
+      if (!users.Id) {
         setError("Data user belum dimuat");
         setIsSubmitting(false);
         return;
@@ -197,7 +198,7 @@ const AddResultPage = () => {
         form.append("event_name", formData.eventName);
         form.append("medali", athlete.posisi);
         form.append("catatan", formData.catatan);
-        form.append("user_id", currentUser.Id || currentUser.id);
+        form.append("user_id", users.Id);
 
         const res = await axiosClient.post("api/hasil/add", form, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -245,7 +246,7 @@ const AddResultPage = () => {
       });
 
       setTimeout(() => {
-        router.push("/porprov");
+        router.push("/hasil-pertandingan/porprov");
       }, 1500);
     } catch (err) {
       console.error("Error saving results:", err);
