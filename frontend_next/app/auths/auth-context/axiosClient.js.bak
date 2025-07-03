@@ -1,0 +1,22 @@
+"use client";
+
+import axios from "axios";
+
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://194.31.53.241:7891";
+
+const axiosClient = axios.create({
+  baseURL: baseURL,
+  withCredentials: true,
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-XSRF-TOKEN",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+axios.defaults.baseURL = baseURL;
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+
+export default axiosClient;
