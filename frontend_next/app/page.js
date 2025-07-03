@@ -4,6 +4,7 @@ import React from "react";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import axiosClient from "../app/auths/auth-context/axiosClient";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -73,7 +74,8 @@ const Dashboard = () => {
   };
 
   const handleNewsClick = (id) => {
-    router.push(`/berita/${id}`);
+    router.push(`/berita/1`);
+    // router.push(`/berita/${id}`);
   };
 
   const [pesan, setPesan] = useState("");
@@ -264,7 +266,7 @@ const Dashboard = () => {
               <div className="md:w-1/3 flex items-center justify-center p-6">
                 <div className="relative rounded-xl overflow-hidden border-4 border-white shadow-lg w-full max-w-xs aspect-[2/3]">
                   <img
-                    src="image/bupati-pasuruan.png"
+                    src="image/bupati-pasuruan.jpeg"
                     alt="H.M. Rusdi Sutejo"
                     className="w-full h-full object-cover"
                   />
@@ -413,24 +415,46 @@ const Dashboard = () => {
         </div>
 
         <section className="mb-16 px-4">
-          <div className="mb-6">
-            <h2
-              className="text-3xl font-bold text-gray-800 mb-2"
-              style={{ fontSize: "var(--font-size-large)" }}
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h2
+                className="text-3xl font-bold text-gray-800 mb-2"
+                style={{ fontSize: "var(--font-size-large)" }}
+              >
+                Berita Terkini
+              </h2>
+              <div
+                className="w-24 h-1 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
+                }}
+              ></div>
+            </div>
+
+            <Link
+              href="/berita/form"
+              className="flex items-center gap-2 font-medium hover:opacity-80 transition-opacity"
+              style={{ color: "var(--color-primary)" }}
             >
-              Berita Terkini
-            </h2>
-            <div
-              className="w-24 h-1 rounded-full"
-              style={{
-                background:
-                  "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
-              }}
-            ></div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Tambah Berita
+            </Link>
           </div>
 
           <div className="relative news-slider-container">
-            {/* Navigation buttons - hidden by default, show on hover */}
+            {/* Navigation buttons */}
             <button
               onClick={() => scrollNews("prev")}
               className="news-navigation absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-opacity duration-300 opacity-0"
