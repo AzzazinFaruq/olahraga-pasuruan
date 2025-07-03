@@ -44,6 +44,7 @@ func main() {
 		publik.GET("/hasil/:id", controllers.GetHasilById)
 		publik.GET("/news", controllers.GetAllNews)
 		publik.GET("/news/:id", controllers.GetNewsById)
+		publik.GET("/atlet-cabor/atlet/:atlet_id", controllers.GetCaborByAtlet)
 	}
 
 	protected := router.Group("/api")

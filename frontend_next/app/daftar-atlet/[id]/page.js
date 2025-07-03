@@ -28,7 +28,7 @@ const AthleteDetail = () => {
         const atletRes = await axiosClient.get(`publik/atlet/${id}`);
 
         // ✅ Endpoint untuk cabor atlet (protected, harus pakai token)
-        const caborRes = await axiosClient.get(`api/atlet-cabor/atlet/${id}`);
+        const caborRes = await axiosClient.get(`publik/atlet-cabor/atlet/${id}`);
 
         setAthlete({
           atlet: atletRes.data.data,
