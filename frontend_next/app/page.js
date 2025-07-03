@@ -264,7 +264,7 @@ const Dashboard = () => {
               <div className="md:w-1/3 flex items-center justify-center p-6">
                 <div className="relative rounded-xl overflow-hidden border-4 border-white shadow-lg w-full max-w-xs aspect-[2/3]">
                   <img
-                    src="image/bupati-pasuruan.png"
+                    src="image/bupati-pasuruan.jpeg"
                     alt="H.M. Rusdi Sutejo"
                     className="w-full h-full object-cover"
                   />
@@ -316,7 +316,7 @@ const Dashboard = () => {
               <div className="md:w-1/3 flex items-center justify-center p-6">
                 <div className="relative rounded-xl overflow-hidden border-4 border-white shadow-lg w-full max-w-xs aspect-[2/3]">
                   <img
-                    src="image/ketua-koni.jpeg"
+                    src="image/mamat-aryo.jpeg"
                     alt="H.M. Rusdi Sutejo"
                     className="w-full h-full object-cover"
                   />
