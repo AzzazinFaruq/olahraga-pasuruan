@@ -7,25 +7,28 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem('user');
-      if (storedUser) {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedUser && storedToken) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error('Error loading user from localStorage:', error);
       localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, authToken) => {
     setUser(userData);
     try {
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('authToken', authToken);
     } catch (error) {
       console.error('Error saving user to localStorage:', error);
     }
@@ -35,6 +38,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     try {
       localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
     } catch (error) {
       console.error('Error removing user from localStorage:', error);
     }
@@ -49,7 +53,7 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (! context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
