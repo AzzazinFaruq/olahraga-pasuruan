@@ -7,7 +7,8 @@ import axiosClient from "../app/auths/auth-context/axiosClient";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getDocumentURL } from "./utils/config";
+import { getDocumentURL, getImageURL } from "./utils/config";
+
 
 const Dashboard = () => {
   const bannerImages = [
@@ -16,45 +17,9 @@ const Dashboard = () => {
   ];
 
   const [dokumentasiAtlet, setDokumentasiAtlet] = useState([]);
+  const [beritaData, setBeritaData] = useState([]);
   const router = useRouter();
   const sliderRef = useRef(null);
-  const beritaData = [
-    {
-      id: 1,
-      cover: "/image/berita-1.jpg",
-      title: "Pasuruan Juara Umum PORPROV 2025",
-      excerpt:
-        "Kabupaten Pasuruan berhasil menjadi juara umum pada ajang Pekan Olahraga Provinsi (PORPROV) Jawa Timur 2025 dengan meraih 120 medali emas, 98 perak, dan 76 perunggu.",
-    },
-    {
-      id: 2,
-      cover: "/image/berita-2.jpg",
-      title: "Pembangunan Stadion Baru Pasuruan",
-      excerpt:
-        "Pemerintah Kabupaten Pasuruan memulai pembangunan stadion baru berstandar internasional yang akan menjadi pusat pelatihan atlet.",
-    },
-    {
-      id: 3,
-      cover: "/image/berita-1.jpg",
-      title: "Atlet Pasuruan Raih Medali di SEA Games",
-      excerpt:
-        "Atlet renang asal Pasuruan, Anisa Rahma, berhasil meraih medali emas di SEA Games 2025 pada nomor 200m gaya bebas.",
-    },
-    {
-      id: 4,
-      cover: "/image/berita-2.jpg",
-      title: "Pelatnas Atlet Pasuruan",
-      excerpt:
-        "Sebanyak 50 atlet dari Kabupaten Pasuruan akan mengikuti pelatnas (pelatihan nasional) untuk persiapan menghadapi PON 2026.",
-    },
-    {
-      id: 5,
-      cover: "/image/berita-1.jpg",
-      title: "Turnamen Sepak Bola Pelajar",
-      excerpt:
-        "Dinas Pemuda dan Olahraga Kabupaten Pasuruan menggelar turnamen sepak bola pelajar se-Kabupaten Pasuruan yang diikuti oleh 100 tim.",
-    },
-  ];
 
   const scrollNews = (direction) => {
     if (sliderRef.current) {
@@ -67,8 +32,7 @@ const Dashboard = () => {
   };
 
   const handleNewsClick = (id) => {
-    router.push(`/daftar-berita/1`);
-    // router.push(`/berita/${id}`);
+    router.push(`/daftar-berita/${id}`);
   };
 
   const [pesan, setPesan] = useState("");
@@ -78,6 +42,15 @@ const Dashboard = () => {
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const newsRes = await axiosClient.get("publik/news");
+        setBeritaData(newsRes.data.data);
+      } catch (err) {
+       setBeritaData(null)
+      }
+    };
+    fetchNews();
     axiosClient
       .get("publik/atlet/count")
       .then((res) => {
@@ -537,7 +510,7 @@ const Dashboard = () => {
                 >
                   <div className="h-48 overflow-hidden relative">
                     <img
-                      src={berita.cover}
+                      src={getImageURL(berita.cover)}
                       alt={berita.title}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     />
@@ -548,7 +521,7 @@ const Dashboard = () => {
                       {berita.title}
                     </h3>
                     <p className="text-gray-600 text-sm line-clamp-3">
-                      {berita.excerpt}
+                      {berita.content}
                     </p>
                     <div className="mt-4 flex items-center text-[var(--color-primary)] text-sm font-medium">
                       Baca selengkapnya

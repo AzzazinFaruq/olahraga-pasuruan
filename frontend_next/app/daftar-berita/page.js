@@ -203,7 +203,7 @@ const NewsPage = () => {
                       </div>
                       
                       <p className="text-gray-600 leading-relaxed mb-6 line-clamp-3">
-                        {news.excerpt}
+                        {news.content}
                       </p>
                       
                       <div className="flex items-center text-[var(--color-primary)] font-medium">
