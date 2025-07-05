@@ -74,7 +74,7 @@ const Dashboard = () => {
   };
 
   const handleNewsClick = (id) => {
-    router.push(`/berita/1`);
+    router.push(`/daftar-berita/1`);
     // router.push(`/berita/${id}`);
   };
 
@@ -415,7 +415,7 @@ const Dashboard = () => {
         </div>
 
         <section className="mb-16 px-4">
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-6">
             <div>
               <h2
                 className="text-3xl font-bold text-gray-800 mb-2"
@@ -431,26 +431,6 @@ const Dashboard = () => {
                 }}
               ></div>
             </div>
-
-            <Link
-              href="/berita/form"
-              className="flex items-center gap-2 font-medium hover:opacity-80 transition-opacity"
-              style={{ color: "var(--color-primary)" }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Tambah Berita
-            </Link>
           </div>
 
           <div className="relative news-slider-container">

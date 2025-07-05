@@ -51,7 +51,7 @@ const NewsDetail = () => {
   };
 
   const handleEdit = () => {
-    router.push(`/berita/edit/${id}`);
+    router.push(`/daftar-berita/edit/${id}`);
   };
 
   if (!berita) {

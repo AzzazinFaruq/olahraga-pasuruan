@@ -83,10 +83,17 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
             <Link
+              href="/daftar-berita"
+              className="font-medium hover:opacity-80 transition-opacity"
+            >
+              Berita
+            </Link>
+
+            <Link
               href="/daftar-atlet"
               className="font-medium hover:opacity-80 transition-opacity"
             >
-              Daftar Atlet
+              Atlet
             </Link>
 
             <div
@@ -99,7 +106,7 @@ const Navbar = () => {
                 onClick={(e) => e.preventDefault()}
                 className="font-medium hover:opacity-80 transition-opacity flex items-center"
               >
-                Hasil Pertandingan
+                Pertandingan
                 <svg
                   className="ml-1 w-4 h-4"
                   fill="none"
