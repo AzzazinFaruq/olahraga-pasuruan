@@ -5,12 +5,12 @@ import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import axiosClient from "@/app/auths/auth-context/axiosClient";
 
 const AddNewsPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
-    date: "",
     content: "",
     cover: null,
   });
@@ -47,25 +47,30 @@ const AddNewsPage = () => {
     setError("");
 
     try {
-      // Simulasi pengiriman data
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const newsForm = new FormData();
+      newsForm.append("title", formData.title);
+      newsForm.append("cover", formData.cover)
+      newsForm.append("content", formData.content)
 
-      Swal.fire({
-        icon: "success",
-        title: "Sukses!",
-        text: "Berita berhasil ditambahkan!",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-        customClass: {
-          popup: "custom-swal-popup",
-          icon: "custom-swal-icon",
-          title: "custom-swal-title",
-        },
-      });
+      const sendNews = axiosClient.post("api/news/add", newsForm)
 
+      if(sendNews){
+        Swal.fire({
+          icon: "success",
+          title: "Sukses!",
+          text: "Berita berhasil ditambahkan!",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+          customClass: {
+            popup: "custom-swal-popup",
+            icon: "custom-swal-icon",
+            title: "custom-swal-title",
+          },
+        });
+      }
       setTimeout(() => {
         router.back();
       }, 1500);
@@ -142,7 +147,7 @@ const AddNewsPage = () => {
                 )}
 
                 {/* Grid untuk Judul dan Tanggal */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid gap-6">
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Judul Berita
@@ -158,19 +163,7 @@ const AddNewsPage = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Tanggal
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      className="w-full p-3 rounded-lg border border-gray-300"
-                      required
-                    />
-                  </div>
+                  
                 </div>
 
                 <div>

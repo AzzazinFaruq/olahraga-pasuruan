@@ -3,14 +3,16 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Swal from "sweetalert2";
+import axiosClient from "@/app/auths/auth-context/axiosClient";
+import { getImageURL } from "@/app/utils/config";
 
 const EditNewsPage = () => {
+  const { id } = useParams();
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
-    date: "",
     content: "",
     cover: null,
   });
@@ -18,34 +20,28 @@ const EditNewsPage = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [newsRes, setNewsRes] = useState();
 
   // Simulate data loading for edit page
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchNews = async () => {
       try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Set sample data for editing
+        const response = await axiosClient.get(`publik/news/${id}`);
+        const data = response.data.data;
+        setNewsRes(data);
         setFormData({
-          title: "Pasuruan Juara Umum PORPROV 2025",
-          date: "2025-06-15",
-          content: `<p class="mb-4">Kabupaten Pasuruan berhasil menjadi juara umum pada ajang Pekan Olahraga Provinsi (PORPROV) Jawa Timur 2025 yang diselenggarakan di Malang. Kontingen Pasuruan meraih total 294 medali dengan rincian 120 emas, 98 perak, dan 76 perunggu.</p>
-          <p class="mb-4">Prestasi ini melampaui target yang ditetapkan oleh KONI Kabupaten Pasuruan dan menjadi yang terbaik sepanjang sejarah keikutsertaan Pasuruan dalam PORPROV. Bupati Pasuruan, H.M. Rusdi Sutejo, menyampaikan apresiasi yang tinggi kepada seluruh atlet, pelatih, dan official yang telah berjuang keras.</p>`,
-          cover: null
+          title: data.title,
+          content: data.content,
+          cover: data.cover,
         });
-        
-        // Set a sample preview image
-        setPreviewCover("/image/berita-1.jpg");
-      } catch (err) {
-        console.error("Gagal memuat data:", err);
-        setError("Terjadi kesalahan saat mengambil data berita.");
-      } finally {
+        setPreviewCover(data.cover ? getImageURL(data.cover) : "");
         setLoading(false);
+      } catch (err) {
+        setNewsRes(null);
       }
     };
 
-    fetchData();
+    fetchNews();
   }, []);
 
   const handleChange = (e) => {
@@ -77,26 +73,32 @@ const EditNewsPage = () => {
     setError("");
 
     try {
-      // Simulate API update delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const newsForm = new FormData();
+      newsForm.append("title", formData.title);
+      newsForm.append("cover", formData.cover)
+      newsForm.append("content", formData.content)
+     
+      const putNews = axiosClient.put(`api/news/update/${id}`, newsForm )
 
       // Show success notification
-      Swal.fire({
-        icon: "success",
-        title: "Sukses!",
-        text: "Berita berhasil diperbarui!",
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true,
-        customClass: {
-          popup: "custom-swal-popup",
-          icon: "custom-swal-icon",
-          title: "custom-swal-title",
-        },
-      });
-
+      if(putNews){
+        Swal.fire({
+          icon: "success",
+          title: "Sukses!",
+          text: "Berita berhasil diperbarui!",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true,
+          customClass: {
+            popup: "custom-swal-popup",
+            icon: "custom-swal-icon",
+            title: "custom-swal-title",
+          },
+        });
+      }
       // Redirect after success
       setTimeout(() => {
         router.back();
@@ -202,7 +204,7 @@ const EditNewsPage = () => {
                 )}
 
                 {/* Grid untuk Judul dan Tanggal */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid gap-6">
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Judul Berita
@@ -214,20 +216,6 @@ const EditNewsPage = () => {
                       onChange={handleChange}
                       className="w-full p-3 rounded-lg border border-gray-300 placeholder-gray-300"
                       placeholder="Masukkan judul berita"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Tanggal
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      className="w-full p-3 rounded-lg border border-gray-300"
                       required
                     />
                   </div>

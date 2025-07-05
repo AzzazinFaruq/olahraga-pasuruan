@@ -106,12 +106,14 @@ func CreateNews(c *gin.Context) {
 	}
 	title := strings.TrimSpace(c.PostForm("title"))
 	content := strings.TrimSpace(c.PostForm("content"))
+	source := strings.TrimSpace(c.PostForm("source"))
 	if coverPath == "" || title == "" || content == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"status": false, "message": "Semua field harus diisi dan cover harus berupa file gambar"})
 		return
 	}
 	news.Cover = coverPath
 	news.Title = title
+	news.Source = source
 	news.Content = content
 	if err := setup.DB.Create(&news).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": false, "message": "Gagal menambah berita: " + err.Error()})
@@ -135,6 +137,7 @@ func UpdateNews(c *gin.Context) {
 	}
 	title := strings.TrimSpace(c.PostForm("title"))
 	content := strings.TrimSpace(c.PostForm("content"))
+	source := strings.TrimSpace(c.PostForm("source"))
 	if coverPath != "" {
 		// Hapus file cover lama jika ada file baru
 		if news.Cover != "" {
@@ -149,6 +152,9 @@ func UpdateNews(c *gin.Context) {
 	}
 	if content != "" {
 		news.Content = content
+	}
+	if source != "" {
+		news.Source = source
 	}
 	if err := setup.DB.Save(&news).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update berita: " + err.Error(), "status": false})

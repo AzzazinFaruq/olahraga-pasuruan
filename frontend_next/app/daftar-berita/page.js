@@ -1,73 +1,68 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect} from "react";
 import Link from "next/link";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import axiosClient from "../auths/auth-context/axiosClient";
+import { getImageURL } from "../utils/config";
+
+
 
 const NewsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [news, setNews] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const newsPerPage = 6;
 
   // Data dummy berita
-  const dummyNews = [
-    {
-      id: 1,
-      cover: "/image/berita-1.jpg",
-      title: "Pasuruan Juara Umum PORPROV 2025",
-      excerpt:
-        "Kabupaten Pasuruan berhasil menjadi juara umum pada ajang Pekan Olahraga Provinsi (PORPROV) Jawa Timur 2025 yang diselenggarakan di Malang. Kontingen Pasuruan meraih total 294 medali dengan rincian 120 emas, 98 perak, dan 76 perunggu. Prestasi ini melampaui target yang ditetapkan oleh KONI Kabupaten Pasuruan dan menjadi yang terbaik sepanjang sejarah keikutsertaan Pasuruan dalam PORPROV.",
-      date: "15 Juni 2025",
-    },
-    {
-      id: 2,
-      cover: "/image/berita-2.jpg",
-      title: "Pembangunan Stadion Baru Pasuruan",
-      excerpt:
-        "Pemerintah Kabupaten Pasuruan memulai pembangunan stadion baru berstandar internasional yang akan menjadi pusat pelatihan atlet. Stadion ini akan dilengkapi dengan fasilitas modern seperti lintasan atletik standar olimpiade, kolam renang indoor, dan pusat kebugaran. Proyek ini diharapkan dapat selesai dalam waktu dua tahun dan akan menjadi kebanggaan masyarakat Pasuruan.",
-      date: "10 Juni 2025",
-    },
-    {
-      id: 3,
-      cover: "/image/berita-1.jpg",
-      title: "Atlet Pasuruan Raih Medali di SEA Games",
-      excerpt:
-        "Atlet renang asal Pasuruan, Anisa Rahma, berhasil meraih medali emas di SEA Games 2025 pada nomor 200m gaya bebas. Prestasi ini merupakan yang pertama kalinya bagi Pasuruan dalam cabang renang di tingkat internasional. Anisa berhasil mencatatkan waktu 2 menit 5 detik, mengalahkan perenang-perenang terbaik dari negara ASEAN lainnya.",
-      date: "5 Juni 2025",
-    },
-    {
-      id: 4,
-      cover: "/image/berita-2.jpg",
-      title: "Pelatnas Atlet Pasuruan",
-      excerpt:
-        "Sebanyak 50 atlet dari Kabupaten Pasuruan akan mengikuti pelatnas (pelatihan nasional) untuk persiapan menghadapi PON 2026. Pelatnas akan dilaksanakan di pusat pelatihan nasional di Jakarta selama 6 bulan penuh. Selama pelatnas, atlet akan mendapatkan pembinaan intensif dari pelatih-pelatih terbaik nasional dan internasional.",
-      date: "1 Juni 2025",
-    },
-    {
-      id: 5,
-      cover: "/image/berita-1.jpg",
-      title: "Turnamen Sepak Bola Pelajar",
-      excerpt:
-        "Dinas Pemuda dan Olahraga Kabupaten Pasuruan menggelar turnamen sepak bola pelajar se-Kabupaten Pasuruan yang diikuti oleh 100 tim dari berbagai sekolah. Turnamen ini bertujuan untuk mencari bakat-bakat muda di bidang sepak bola yang akan dibina menjadi atlet profesional. Acara pembukaan dihadiri oleh Bupati Pasuruan dan Ketua KONI Kabupaten Pasuruan.",
-      date: "28 Mei 2025",
-    },
-    {
-      id: 6,
-      cover: "/image/berita-2.jpg",
-      title: "Penghargaan Untuk Pelatih Berprestasi",
-      excerpt:
-        "Tiga pelatih dari Kabupaten Pasuruan menerima penghargaan sebagai pelatih terbaik tingkat provinsi. Mereka adalah Budi Santoso (atletik), Siti Rahayu (bulu tangkis), dan Ahmad Fauzi (renang). Penghargaan diberikan langsung oleh Gubernur Jawa Timur di acara tahunan penghargaan olahraga provinsi.",
-      date: "25 Mei 2025",
-    },
-  ];
 
   // Filter berita berdasarkan search query
-  const filteredNews = dummyNews.filter(
+  const filteredNews = news.filter(
     (news) =>
       news.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       news.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userRes = await axiosClient.get("api/user");
+        setCurrentUser(userRes.data.data);
+        setIsLoggedIn(true);
+      } catch (err) {
+        console.error("User tidak login atau token invalid:", err);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
+    const fetchNews = async () => {
+      try {
+        const newsRes = await axiosClient.get("publik/news");
+        setNews(newsRes.data.data);
+      } catch (err) {
+       setNews(null)
+      }
+    };
+    fetchNews();
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const res = await axiosClient.get("api/user");
+          setCurrentUser(res.data.data);
+          setIsLoggedIn(true);
+        }
+      } catch (err) {
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Pagination
   const indexOfLastNews = currentPage * newsPerPage;
@@ -130,28 +125,30 @@ const NewsPage = () => {
             </div>
           </div>
 
-          <Link
-            href="/daftar-berita/form"
-            className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
-            style={{
-              backgroundColor: "var(--color-primary)",
-              color: "white",
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+          {isLoggedIn && currentUser && currentUser.role === 1 && (
+            <Link
+              href="/daftar-berita/form"
+              className="px-4 py-3 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+              style={{
+                backgroundColor: "var(--color-primary)",
+                color: "white",
+              }}
             >
-              <path
-                fillRule="evenodd"
-                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Tambah Berita
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Tambah Berita
+            </Link>
+          )}
         </div>
 
         <div className="mb-12">
@@ -159,8 +156,7 @@ const NewsPage = () => {
             currentNews.map((news) => (
               <Link
                 key={news.id}
-                // href={`/daftar-berita/${news.id}`}
-                href={`/daftar-berita/1`}
+                href={`/daftar-berita/${news.id}`}
                 className="block mb-10 transform transition-transform duration-200 hover:scale-[1.005]"
               >
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
@@ -169,7 +165,7 @@ const NewsPage = () => {
                     <div className="md:w-2/5 p-4">
                       <div className="rounded-xl overflow-hidden aspect-video md:aspect-auto md:h-64">
                         <img
-                          src={news.cover}
+                          src={getImageURL(news.cover)}
                           alt={news.title}
                           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                         />
@@ -197,7 +193,13 @@ const NewsPage = () => {
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        <span>{news.date}</span>
+                        <span>
+                        {new Date(news.created_at).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric"
+                        })}
+                        </span>
                       </div>
                       
                       <p className="text-gray-600 leading-relaxed mb-6 line-clamp-3">

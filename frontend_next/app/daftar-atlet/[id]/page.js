@@ -20,6 +20,7 @@ const AthleteDetail = () => {
   const [athlete, setAthlete] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
 
   useEffect(() => {
     if (!id) return;
