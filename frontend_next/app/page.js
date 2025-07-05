@@ -4,6 +4,7 @@ import React from "react";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import axiosClient from "../app/auths/auth-context/axiosClient";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getDocumentURL } from "./utils/config";
@@ -66,7 +67,8 @@ const Dashboard = () => {
   };
 
   const handleNewsClick = (id) => {
-    router.push(`/berita/${id}`);
+    router.push(`/daftar-berita/1`);
+    // router.push(`/berita/${id}`);
   };
 
   const [pesan, setPesan] = useState("");
@@ -461,23 +463,25 @@ const Dashboard = () => {
 
         <section className="mb-16 px-4">
           <div className="mb-6">
-            <h2
-              className="text-3xl font-bold text-gray-800 mb-2"
-              style={{ fontSize: "var(--font-size-large)" }}
-            >
-              Berita Terkini
-            </h2>
-            <div
-              className="w-24 h-1 rounded-full"
-              style={{
-                background:
-                  "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
-              }}
-            ></div>
+            <div>
+              <h2
+                className="text-3xl font-bold text-gray-800 mb-2"
+                style={{ fontSize: "var(--font-size-large)" }}
+              >
+                Berita Terkini
+              </h2>
+              <div
+                className="w-24 h-1 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, var(--color-primary), var(--color-primary-dark))",
+                }}
+              ></div>
+            </div>
           </div>
 
           <div className="relative news-slider-container">
-            {/* Navigation buttons - hidden by default, show on hover */}
+            {/* Navigation buttons */}
             <button
               onClick={() => scrollNews("prev")}
               className="news-navigation absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-opacity duration-300 opacity-0"
