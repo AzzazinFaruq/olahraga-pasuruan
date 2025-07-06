@@ -266,11 +266,19 @@ const Navbar = () => {
           <div className="lg:hidden pb-4">
             <div className="flex flex-col space-y-4">
               <Link
+                href="/daftar-berita"
+                className="font-medium hover:opacity-80 transition-opacity"
+                onClick={toggleMenu}
+              >
+                Berita
+              </Link>
+          
+              <Link
                 href="/daftar-atlet"
                 className="font-medium hover:opacity-80 transition-opacity"
                 onClick={toggleMenu}
               >
-                Daftar Atlet
+                Atlet
               </Link>
 
               <div className="flex flex-col">
@@ -282,7 +290,7 @@ const Navbar = () => {
                   }
                   className="font-medium hover:opacity-80 transition-opacity flex justify-between items-center w-full"
                 >
-                  <span>Hasil Pertandingan</span>
+                  <span>Pertandingan</span>
                   <svg
                     className={`w-4 h-4 transform transition-transform ${
                       activeDropdown === "results" ? "rotate-180" : ""
